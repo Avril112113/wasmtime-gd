@@ -1,0 +1,26 @@
+[package]
+name = "wasmtime-gd"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.102"
+fragile = "2.1.0"
+godot = { version="0.5.3", features = ["api-4-5", "register-docs", "experimental-threads"] }
+wasmtime = { version="45.0.0", features = ["anyhow"] }
+strum = { version = "0.28", features = ["derive"] }
+
+[profile.dev]
+lto = "off"
+debug = "none"
+opt-level = 0
+
+[profile.dev.package."*"]
+debug = "line-tables-only"
+opt-level = 3
+
+[profile.dev.build-override]
+opt-level = 3

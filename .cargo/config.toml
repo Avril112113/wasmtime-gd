@@ -1,0 +1,13 @@
+[env]
+GODOT4_BIN = { value = "C:\\Users\\avril\\Desktop\\Godot_v4.6.2-stable_win64.exe", relative = false, force = true }
+
+[build]
+rustflags = ["-Zthreads=8", "-Zshare-generics"]
+
+# CraneLift breaks godot hot-reload.
+
+# [unstable]
+# codegen-backend = true
+
+# [profile.dev]
+# codegen-backend = "cranelift"
