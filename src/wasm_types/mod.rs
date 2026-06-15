@@ -7,3 +7,4 @@ pub use val_utils::ValIntoVariant;
 
 pub mod gd_wasm_global;
 pub mod gd_wasm_func;
+pub mod gd_wasm_memory;

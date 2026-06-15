@@ -28,6 +28,16 @@ func _run() -> void:
 		return
 	#print(instance)
 	
-	var test_func := instance.get_func(store, "test_func")
+	var test_func := instance.get_func("test_func")
 	prints(test_func.get_param_types(), test_func.get_result_types())
 	prints(test_func.call_wasm([1]))
+	
+	
+	var memory := instance.get_memory("memory")
+	print("%s minimum=%s maximum=%s is_64=%s is_shared=%s" % [memory, memory.minimum(), memory.maximum(), memory.is_64(), memory.is_shared()])
+	print("size=%s page_size=%s data_size=%s" % [memory.size(), memory.page_size(), memory.data_size()])
+	memory.grow(1)
+	print("size=%s page_size=%s data_size=%s" % [memory.size(), memory.page_size(), memory.data_size()])
+	print(memory.read(0, 16))
+	print(memory.write(0, range(0, 10)))
+	print(memory.read(0, 16))

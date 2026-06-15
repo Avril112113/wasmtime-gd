@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal}};
+use crate::{gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory}};
 
 /// An instantiated Wasmtime Module.
 /// 
@@ -9,6 +9,7 @@ use crate::{gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wa
 #[class(base=RefCounted)]
 pub struct WasmInstance {
 	instance: wasmtime::Instance,
+    store: Gd<WasmStore>,
 }
 
 #[godot_api]
@@ -20,26 +21,36 @@ impl IRefCounted for WasmInstance {
 
 #[godot_api]
 impl WasmInstance {
-    pub fn new(instance: wasmtime::Instance) -> Self {
+    pub fn new(instance: wasmtime::Instance, store: Gd<WasmStore>) -> Self {
         return Self {
             instance,
+            store,
         };
     }
 
     #[func]
-    fn get_global(&mut self, mut store: Gd<WasmStore>, name: GString) -> Option<Gd<WasmGlobal>> {
-        let gd_store = store.clone();
-        return match self.instance.get_global(&mut store.bind_mut().store, &name.to_string()) {
+    fn get_global(&mut self, name: GString) -> Option<Gd<WasmGlobal>> {
+        let gd_store = self.store.clone();
+        return match self.instance.get_global(&mut self.store.bind_mut().store, &name.to_string()) {
             Some(global) => Some(WasmGlobal::new_from(global, gd_store)),
             None => None,
         };
     }
 
     #[func]
-    fn get_func(&mut self, mut store: Gd<WasmStore>, name: GString) -> Option<Gd<WasmFunc>> {
-        let gd_store = store.clone();
-        return match self.instance.get_func(&mut store.bind_mut().store, &name.to_string()) {
+    fn get_func(&mut self, name: GString) -> Option<Gd<WasmFunc>> {
+        let gd_store = self.store.clone();
+        return match self.instance.get_func(&mut self.store.bind_mut().store, &name.to_string()) {
             Some(func) => Some(WasmFunc::new_from(func, gd_store)),
+            None => None,
+        };
+    }
+
+    #[func]
+    fn get_memory(&mut self, name: GString) -> Option<Gd<WasmMemory>> {
+        let gd_store = self.store.clone();
+        return match self.instance.get_memory(&mut self.store.bind_mut().store, &name.to_string()) {
+            Some(memory) => Some(WasmMemory::new_from(memory, gd_store)),
             None => None,
         };
     }

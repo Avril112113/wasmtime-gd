@@ -35,7 +35,7 @@ impl WasmLinker {
         let instance = self.linker.instantiate(&mut store.bind_mut().store, &module.bind().module)
             .or_print_error("Failed to create Instance:")?;
         
-        return Some(Gd::from_object(WasmInstance::new(instance)));
+        return Some(Gd::from_object(WasmInstance::new(instance, store)));
     }
 
     /// [param wasm_extern] may be one of the following;

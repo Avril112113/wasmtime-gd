@@ -4,4 +4,7 @@
 
 	(import "env" "test_func" (func $test_func (param i32) (result i32)))
 	(export "test_func" (func $test_func))
+
+
+	(memory (export "memory") 0)
 )
