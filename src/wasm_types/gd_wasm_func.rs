@@ -45,7 +45,6 @@ impl WasmFunc {
 		})
 	}
 
-	// TODO: Define func args and results.
 	#[func]
 	fn from_callable(mut store: Gd<WasmStore>, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable) -> MyGodotResult<Option<Gd<Self>>> {
 		let gd_store = store.clone();
