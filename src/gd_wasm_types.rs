@@ -107,6 +107,7 @@ impl ValTypeGodot for wasmtime::ValType {
 	}
 }
 
+// NOTE: Any changes here may need to be reflected in `wasm_types.gd``
 impl ValTypeGodot for wasmtime::FuncType {
 	fn to_variant(&self) -> Variant {
 		let mut array = Array::new();
