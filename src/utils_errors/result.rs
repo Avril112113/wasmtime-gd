@@ -1,9 +1,23 @@
-use godot::{meta::{Element, error::{CallOutcome, ErrorToGodot}}, prelude::*};
+
+use godot::{global::{PrintRecord, print_custom}, meta::{Element, error::{CallOutcome, ErrorToGodot}}};
+
+use crate::gd_script_stuff::{GDScriptStuff, ToPrintSourceOption};
 
 
 pub(crate) type MyGodotResult<T, E = MyGodotError<T>> = Result<T, E>;
 
 pub(crate) struct MyGodotError<T> { pub value: T, pub msg: String, pub err: Option<Box<dyn std::fmt::Display + 'static>> }
+
+impl<T> MyGodotError<T> {
+	/// Makes the Rust error not printed to Godot.
+	pub fn without_err(self) -> Self {
+		return Self {
+			value: self.value,
+			msg: self.msg,
+			err: None,
+		};
+	}
+}
 
 impl<T: Element> ErrorToGodot<T> for MyGodotError<T> {
 	type Mapped = T;
@@ -12,11 +26,18 @@ impl<T: Element> ErrorToGodot<T> for MyGodotError<T> {
 		return match result {
 			Ok(value) => CallOutcome::Return(value),
 			Err(MyGodotError { value, msg, err }) => {
-				if let Some(err) = err {
-					godot_error!("WasmtimeGd: {}\n{}", msg, err);
-				} else {
-					godot_error!("WasmtimeGd: {}", msg);
-				}
+				let frame_info = GDScriptStuff::get_last_frame_info();
+				let source = frame_info.to_print_source();
+				
+				let rationale = err.map(|err| err.as_ref().to_string());
+
+				print_custom(PrintRecord {
+					level: godot::global::PrintLevel::Error,
+					message: msg.as_str(),
+					rationale: rationale.as_deref(),
+					source,
+					editor_notify: false,
+				});
 				return CallOutcome::Return(value);
 			},
 		};
@@ -48,5 +69,17 @@ pub(crate) trait IntoMyGodotResultAlt<TRes,TErrRes> {
 impl<TRes, TErrRes> IntoMyGodotResultAlt<TRes,TErrRes> for Result<TRes,()> {
 	fn or_godot_error(self, msg: &str, err_value: TErrRes) -> Result<TRes, MyGodotError<TErrRes>> {
 		return self.map_err(|_| MyGodotError { value: err_value, msg: msg.into(), err: None });
+	}
+}
+
+
+pub(crate) trait IntoMyGodotResultImpl<TRes,TErrRes> {
+	fn without_err(self) -> Result<TRes, MyGodotError<TErrRes>>;
+}
+
+impl<TRes, TErrRes> IntoMyGodotResultImpl<TRes,TErrRes> for Result<TRes,MyGodotError<TErrRes>> {
+	/// Makes the Rust error not printed to Godot.
+	fn without_err(self) -> Result<TRes, MyGodotError<TErrRes>> {
+		return self.map_err(MyGodotError::without_err);
 	}
 }

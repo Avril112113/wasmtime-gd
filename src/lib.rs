@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+mod gd_script_stuff;
+
 mod utils_errors;
 mod utils;
 

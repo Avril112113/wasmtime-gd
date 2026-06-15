@@ -1,4 +1,6 @@
-use godot::prelude::*;
+use godot::global::{PrintRecord, print_custom};
+
+use crate::gd_script_stuff::{GDScriptStuff, ToPrintSourceOption};
 
 
 pub(crate) trait IntoMyGodotOption<TRes> {
@@ -8,7 +10,16 @@ pub(crate) trait IntoMyGodotOption<TRes> {
 impl<TRes, TErr:Into<anyhow::Error>> IntoMyGodotOption<TRes> for Result<TRes,TErr> {
 	fn or_print_error(self, msg: &str) -> Option<TRes> {
 		if let Err(err) = self {
-			godot_error!("WasmtimeGd: {}\n{}", msg, err.into());
+			let frame_info = GDScriptStuff::get_last_frame_info();
+			let source = frame_info.to_print_source();
+			
+			print_custom(PrintRecord {
+				level: godot::global::PrintLevel::Error,
+				message: msg,
+				rationale: Some(&err.into().to_string()),
+				source,
+				editor_notify: false,
+			});
 			return None;
 		} else {
 			return self.ok();
@@ -19,7 +30,16 @@ impl<TRes, TErr:Into<anyhow::Error>> IntoMyGodotOption<TRes> for Result<TRes,TEr
 impl<TRes> IntoMyGodotOption<TRes> for Option<TRes> {
 	fn or_print_error(self, msg: &str) -> Option<TRes> {
 		if self.is_none() {
-			godot_error!("WasmtimeGd: {}", msg);
+			let frame_info = GDScriptStuff::get_last_frame_info();
+			let source = frame_info.to_print_source();
+			
+			print_custom(PrintRecord {
+				level: godot::global::PrintLevel::Error,
+				message: msg,
+				rationale: None,
+				source,
+				editor_notify: false,
+			});
 			return None;
 		} else {
 			return self;
