@@ -153,3 +153,23 @@ impl ValTypeGodot for wasmtime::FuncType {
 		return Ok(wasmtime::FuncType::new(engine, params, results));
 	}
 }
+
+impl ValTypeGodot for wasmtime::ExternType {
+	fn to_variant(&self) -> Variant {
+		match self {
+			wasmtime::ExternType::Func(func_type) => func_type.to_variant(),
+			wasmtime::ExternType::Global(_global_type) => todo!(),
+			wasmtime::ExternType::Table(_table_type) => todo!(),
+			wasmtime::ExternType::Memory(_memory_type) => todo!(),
+			wasmtime::ExternType::Tag(_tag_type) => todo!(),
+		}
+	}
+
+	fn from_variant(engine: &wasmtime::Engine, variant: &Variant) -> Result<Self, ConvertError> where Self: Sized {
+		if let Ok(func_type) = wasmtime::FuncType::from_variant(engine, variant) {
+			return Ok(wasmtime::ExternType::Func(func_type));
+		}
+
+		return Err(ConvertError::new("Invalid WASM type composition"));
+	}
+}

@@ -71,4 +71,22 @@ impl WasmModule {
         drop(file);
 		return Self::new_from(engine, packed_byte_array);
     }
+
+    #[func]
+    fn get_imports(&mut self) -> Dictionary<GString,Variant> {
+        let mut dict = Dictionary::new();
+        for export in self.module.imports() {
+            dict.set(export.name(), &export.ty().to_variant());
+        }
+        return dict;
+    }
+
+    #[func]
+    fn get_exports(&mut self) -> Dictionary<GString,Variant> {
+        let mut dict = Dictionary::new();
+        for export in self.module.exports() {
+            dict.set(export.name(), &export.ty().to_variant());
+        }
+        return dict;
+    }
 }
