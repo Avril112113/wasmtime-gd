@@ -1,7 +1,7 @@
 use godot::prelude::*;
-use wasmtime::AsContext;
+use wasmtime::{AsContext, AsContextMut};
 
-use crate::gd_wasm_engine::WasmEngine;
+use crate::{gd_wasm_engine::WasmEngine, store_same_as::ContextStoreSameAs, utils::GdAsContext};
 
 /// A Wasmtime Linker, to link wasm modules/instances together and provide imports from the host.
 /// 
@@ -12,35 +12,47 @@ use crate::gd_wasm_engine::WasmEngine;
 #[class(base=RefCounted)]
 pub struct WasmStore {
 	pub store: wasmtime::Store<()>,
-    pub engine: Gd<WasmEngine>,
 }
 
 #[godot_api]
 impl IRefCounted for WasmStore {
-    fn init(_base: Base<Self::Base>) -> Self {
-        panic!("WasmStore.new() is invalid!");
-    }
+	fn init(_base: Base<Self::Base>) -> Self {
+		panic!("WasmStore.new() is invalid!");
+	}
 }
 
 #[godot_api]
 impl WasmStore {
-    #[func]
-    fn new_with(engine: Gd<WasmEngine>) -> Gd<Self> {
-        let gd_engine = engine.clone();
+	#[func]
+	fn new_with(engine: Gd<WasmEngine>) -> Gd<Self> {
 		return Gd::from_object(Self {
-            store: wasmtime::Store::new(&engine.bind().engine, ()),
-            engine: gd_engine,
-        });
-    }
+			store: wasmtime::Store::new(&engine.bind().engine, ()),
+		});
+	}
 
-    pub fn same_as_(&self, other: &WasmStore) -> bool {
-        let ptr_a = self.store.as_context().data() as *const ();
-        let ptr_b = other.store.as_context().data() as *const ();
-        return std::ptr::eq(ptr_a, ptr_b);
-    }
-
-    #[func]
-    pub fn same_as(&self, other: Gd<WasmStore>) -> bool {
-        return self.same_as_(&other.bind());
-    }
+	#[func]
+	pub fn same_as(&self, other: DynGd<RefCounted, dyn AsContext<Data = ()>>) -> bool {
+		return self.as_context().same_store_as(&other.dyn_bind().as_context());
+	}
 }
+
+#[godot_dyn]
+impl GdAsContext for WasmStore {
+	fn as_context(&self) -> wasmtime::StoreContext<'_, ()> {
+		return self.store.as_context();
+	}
+
+	fn as_context_mut(&mut self) -> wasmtime::StoreContextMut<'_, ()> {
+		return self.store.as_context_mut();
+	}
+}
+
+// impl AsDyn<dyn wasmtime::GdAsContext> for WasmStore {
+// 	fn dyn_upcast(&self) -> &(dyn wasmtime::GdAsContext + 'static) {
+// 		self
+// 	}
+
+// 	fn dyn_upcast_mut(&mut self) -> &mut (dyn wasmtime::GdAsContext + 'static) {
+// 		self
+// 	}
+// }

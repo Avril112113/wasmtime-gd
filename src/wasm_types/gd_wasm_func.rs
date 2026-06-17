@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_store::WasmStore, to_from_variant::ToFromVariant, utils_errors::*, wasm_types::*};
+use crate::{gd_wasm_caller::WasmCaller, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
 use super::WasmAsExtern;
 
 
@@ -18,7 +18,7 @@ use super::WasmAsExtern;
 #[class(base=RefCounted)]
 pub struct WasmFunc {
 	pub func: wasmtime::Func,
-	store: Gd<WasmStore>,
+	context: DynGd<RefCounted, dyn GdAsContext>,
 }
 
 #[godot_dyn]
@@ -37,23 +37,22 @@ impl IRefCounted for WasmFunc {
 
 #[godot_api]
 impl WasmFunc {
-	pub fn new_from(func: wasmtime::Func, store: Gd<WasmStore>) -> Gd<Self> {
-		// Callee may expect `store` to not be binded to during this call.
+	pub fn new_from(func: wasmtime::Func, context: DynGd<RefCounted, dyn GdAsContext>) -> Gd<Self> {
+		// Callee may expect `context` to not be binded to during this call.
 		return Gd::from_object(WasmFunc {
 			func,
-			store,
+			context,
 		})
 	}
 
 	#[func]
-	fn from_callable(mut store: Gd<WasmStore>, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable) -> MyGodotResult<Option<Gd<Self>>> {
-		let gd_store = store.clone();
+	fn from_callable(mut context: DynGd<RefCounted, dyn GdAsContext>, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable) -> MyGodotResult<Option<Gd<Self>>> {
+		let gd_context: DynGd<RefCounted, _> = context.clone();
 		
 		let callable = fragile::Fragile::new(callable);
 		// let callable = SendCallable(callable);
 
-		let mut store_mut = &mut store.bind_mut().store;
-  		let engine = store_mut.engine();
+  		let engine = &mut context.dyn_bind_mut().as_context_mut().engine().clone();
 		
 		let params = param_types.iter_shared()
 			.enumerate()
@@ -78,11 +77,22 @@ impl WasmFunc {
 		);
 
 		let func = wasmtime::Func::new(
-			&mut store_mut, func_type.clone(),
-			move |_caller, params, results| {
-				let varags: Vec<Variant> = params.iter().map(|v| v.into_variant()).collect();
+			&mut context.dyn_bind_mut().as_context_mut(), func_type.clone(),
+			move |caller, params, results| {
+				let mut varags: Vec<Variant> = params.iter().map(|v| v.into_variant()).collect();
+				
+				let gd_caller;
+				unsafe {
+					gd_caller = WasmCaller::new_from(std::mem::transmute(caller));
+				}
+				let _guard = scopeguard::guard((), |_| {
+					gd_caller.clone().bind_mut().invalidate();
+				});
+				varags.insert(0, gd_caller.to_variant());
+				
 				// let result = callable.clone().0.call(&varags);
 				let result = callable.get().call(&varags);
+				
 				match results.len() {
 					0 => {},
 					1 => results[0] = func_type.result(0).unwrap().val_from(result).into_trap()?,
@@ -100,34 +110,38 @@ impl WasmFunc {
 			}
 		);
 
-		return Ok(Some(Self::new_from(func, gd_store)));
+		return Ok(Some(Self::new_from(func, gd_context)));
 	}
 
 	#[func]
 	fn get_func_type(&mut self) -> Variant {
-		let store = &mut self.store.bind_mut().store;
-		return self.func.ty(store).to_variant();
+		let dyn_context = self.context.dyn_bind();
+		let context = &mut dyn_context.as_context();
+		return self.func.ty(context).to_variant();
 	}
 
 	#[func]
 	fn get_param_types(&mut self) -> Array<Variant> {
-		let store = &mut self.store.bind_mut().store;
-		return Array::from_iter(self.func.ty(store).params().map(|ty| ty.to_variant()));
+		let dyn_context = self.context.dyn_bind();
+		let context = &mut dyn_context.as_context();
+		return Array::from_iter(self.func.ty(context).params().map(|ty| ty.to_variant()));
 	}
 
 	#[func]
 	fn get_result_types(&mut self) -> Array<Variant> {
-		let store = &mut self.store.bind_mut().store;
-		return Array::from_iter(self.func.ty(store).results().map(|ty| ty.to_variant()));
+		let dyn_context = self.context.dyn_bind();
+		let context = &mut dyn_context.as_context();
+		return Array::from_iter(self.func.ty(context).results().map(|ty| ty.to_variant()));
 	}
 
 	// https://github.com/godot-rust/gdext/issues/1472
 	/// Returns an array of values, or `nil` if the function has no returns.
 	#[func]
 	fn call_wasm(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
-		let mut store = &mut self.store.bind_mut().store;
+		let mut dyn_context_mut = self.context.dyn_bind_mut();
+		let mut context_mut = &mut dyn_context_mut.as_context_mut();
 		
-		let func_type = self.func.ty(&mut store);
+		let func_type = self.func.ty(&mut context_mut);
 		let param_types = func_type.params();
 
 		if args.len() != param_types.len() {
@@ -137,7 +151,7 @@ impl WasmFunc {
 		let params = param_types.enumerate().map(|(i, ty)| -> Result<wasmtime::Val, MyGodotError<Variant>> {
 			return ty.val_from(args.at(i)).or_godot_error(&format!("Invalid arg type arg #{}, expected {}", i, ty), Variant::nil());
 		}).collect::<Result<Vec<wasmtime::Val>, MyGodotError<Variant>>>()?;
-		let mut results = self.func.ty(&mut store).results().map(|ty| {
+		let mut results = self.func.ty(&mut context_mut).results().map(|ty| {
 			if let Some(val) = ty.default_value() {
 				return val;
 			}
@@ -147,7 +161,7 @@ impl WasmFunc {
 			};
 		}).collect::<Vec<wasmtime::Val>>();
 
-		self.func.call(&mut store, params.as_slice(), results.as_mut_slice())
+		self.func.call(&mut context_mut, params.as_slice(), results.as_mut_slice())
 			.or_godot_error("Call error:", Variant::nil())?;
 
 		return match results.len() {

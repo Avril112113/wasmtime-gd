@@ -12,6 +12,7 @@ fragile = "2.1.0"
 godot = { version="0.5.3", features = ["api-4-5", "register-docs", "experimental-threads"] }
 wasmtime = { version="45.0.0", features = ["anyhow"] }
 strum = { version = "0.28", features = ["derive"] }
+scopeguard = "1.2.0"
 
 [profile.dev]
 lto = "off"

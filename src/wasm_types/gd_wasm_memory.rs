@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_store::WasmStore, to_from_variant::ToFromVariant, utils_errors::*};
+use crate::{store_same_as::ContextStoreSameAs, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*};
 use super::WasmAsExtern;
 
 /// A Wasmtime Extern::Memory
@@ -17,7 +17,7 @@ use super::WasmAsExtern;
 #[class(base=RefCounted)]
 pub struct WasmMemory {
 	pub memory: wasmtime::Memory,
-	store: Gd<WasmStore>,
+    context: DynGd<RefCounted, dyn GdAsContext>,
 }
 
 #[godot_dyn]
@@ -36,15 +36,15 @@ impl IRefCounted for WasmMemory {
 
 #[godot_api]
 impl WasmMemory {
-	pub fn new_from(memory: wasmtime::Memory, store: Gd<WasmStore>) -> Gd<Self> {
-		return Gd::from_object(WasmMemory {
+	pub fn new_from(memory: wasmtime::Memory, context: DynGd<RefCounted, dyn GdAsContext>) -> Gd<Self> {
+		return Gd::from_object(Self {
 			memory,
-			store,
+			context,
 		})
 	}
 
 	#[func]
-	fn new_memory(&self, mut store: Gd<WasmStore>, minimum: i64, #[opt(default=-1)] maximum: i64, #[opt(default=false)] is_64: bool) -> Option<Gd<WasmMemory>> {
+	fn new_memory(&self, mut context: DynGd<RefCounted, dyn GdAsContext>, minimum: i64, #[opt(default=-1)] maximum: i64, #[opt(default=false)] is_64: bool) -> Option<Gd<WasmMemory>> {
 		let mut memory_builder = wasmtime::MemoryTypeBuilder::new();
 		
 		let minimum = minimum.try_into().or_print_error(&format!("param minimum is out of bounds of u64 (between 0 - {})", u64::MAX))?;
@@ -59,55 +59,55 @@ impl WasmMemory {
 
 		let memory_type = memory_builder.build()
 			.or_print_error("Failed to create memory")?;
-		let memory = wasmtime::Memory::new(&mut store.bind_mut().store, memory_type)
+		let memory = wasmtime::Memory::new(&mut context.dyn_bind_mut().as_context_mut(), memory_type)
 			.or_print_error("Failed to create memory")?;
 		return Some(WasmMemory::new_from(
 			memory,
-			store
+			context
 		));
 	}
 
 	#[func]
 	fn get_memory_type(&self) -> Variant {
-		return self.memory.ty(&self.store.bind().store).to_variant();
+		return self.memory.ty(&self.context.dyn_bind().as_context()).to_variant();
 	}
 
 	#[func]
 	fn size(&self) -> i64 {
-		return self.memory.size(&self.store.bind().store) as i64;
+		return self.memory.size(&self.context.dyn_bind().as_context()) as i64;
 	}
 
 	#[func]
 	fn data_size(&self) -> i64 {
-		return self.memory.data_size(&self.store.bind().store) as i64;
+		return self.memory.data_size(&self.context.dyn_bind().as_context()) as i64;
 	}
 
 	#[func]
 	fn page_size(&self) -> i64 {
-		return self.memory.page_size(&self.store.bind().store) as i64;
+		return self.memory.page_size(&self.context.dyn_bind().as_context()) as i64;
 	}
 
 	#[func]
 	fn minimum(&self) -> i64 {
-		let ty = self.memory.ty(&self.store.bind().store);
+		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
 		return ty.minimum() as i64;
 	}
 
 	#[func]
 	fn maximum(&self) -> i64 {
-		let ty = self.memory.ty(&self.store.bind().store);
+		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
 		return ty.maximum().map_or(i64::MAX, |v| v as i64);
 	}
 
 	#[func]
 	fn is_64(&self) -> bool {
-		let ty = self.memory.ty(&self.store.bind().store);
+		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
 		return ty.is_64();
 	}
 
 	#[func]
 	fn is_shared(&self) -> bool {
-		let ty = self.memory.ty(&self.store.bind().store);
+		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
 		return ty.is_shared();
 	}
 
@@ -115,7 +115,7 @@ impl WasmMemory {
 	#[func]
 	fn grow(&mut self, delta: i64) -> MyGodotResult<bool> {
 		let delta = IntoMyGodotResult::or_godot_error(delta.try_into(), &format!("param delta is out of bounds of u64 (between 0 - {})", u64::MAX), false).without_err()?;
-		self.memory.grow(&mut self.store.bind_mut().store, delta)
+		self.memory.grow(&mut self.context.dyn_bind_mut().as_context_mut(), delta)
 			.or_godot_error("Failed to grow memory", false)?;
 		return Ok(true);
 	}
@@ -123,7 +123,7 @@ impl WasmMemory {
 	#[func]
 	fn write(&mut self, offset: i64, bytes: PackedByteArray) -> MyGodotResult<bool> {
 		let offset = IntoMyGodotResult::or_godot_error(offset.try_into(), &format!("param offset is out of bounds of usize (between 0 - {})", usize::MAX), false).without_err()?;
-		self.memory.write(&mut self.store.bind_mut().store, offset, bytes.as_slice())
+		self.memory.write(&mut self.context.dyn_bind_mut().as_context_mut(), offset, bytes.as_slice())
 			.or_godot_error("Failed to write memory", false)?;
 		return Ok(true);
 	}
@@ -134,13 +134,13 @@ impl WasmMemory {
 		let mut bytes = PackedByteArray::new();
 		let length = IntoMyGodotResult::or_godot_error(length.try_into(), &format!("param length is out of bounds of usize (between 0 - {})", usize::MAX), PackedByteArray::new()).without_err()?;
 		bytes.resize(length);
-		self.memory.read(&mut self.store.bind_mut().store, offset as usize, bytes.as_mut_slice())
+		self.memory.read(&mut self.context.dyn_bind_mut().as_context_mut(), offset as usize, bytes.as_mut_slice())
 			.or_godot_error("Failed to read memory", PackedByteArray::new())?;
 		return Ok(bytes);
 	}
 
     #[func]
     fn same_as(&mut self, other: Gd<WasmMemory>) -> bool {
-        return self.store.bind().same_as_(&other.bind().store.bind()) && self.memory.debug_index_in_store() == other.bind().memory.debug_index_in_store();
+        return self.context.dyn_bind().as_context().same_store_as(&other.bind().context.dyn_bind().as_context()) && self.memory.debug_index_in_store() == other.bind().memory.debug_index_in_store();
     }
 }

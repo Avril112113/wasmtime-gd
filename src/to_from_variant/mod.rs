@@ -14,3 +14,5 @@ pub(crate) mod table_type;
 pub(crate) mod memory_type;
 pub(crate) mod tag_type;
 
+pub(crate) mod extern_;
+

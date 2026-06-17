@@ -34,7 +34,7 @@ impl WasmInstance {
     fn get_global(&mut self, name: GString) -> Option<Gd<WasmGlobal>> {
         let gd_store = self.store.clone();
         return match self.instance.get_global(&mut self.store.bind_mut().store, &name.to_string()) {
-            Some(global) => Some(WasmGlobal::new_from(global, gd_store)),
+            Some(global) => Some(WasmGlobal::new_from(global, gd_store.into_dyn().upcast())),
             None => None,
         };
     }
@@ -43,7 +43,7 @@ impl WasmInstance {
     fn get_func(&mut self, name: GString) -> Option<Gd<WasmFunc>> {
         let gd_store = self.store.clone();
         return match self.instance.get_func(&mut self.store.bind_mut().store, &name.to_string()) {
-            Some(func) => Some(WasmFunc::new_from(func, gd_store)),
+            Some(func) => Some(WasmFunc::new_from(func, gd_store.into_dyn().upcast())),
             None => None,
         };
     }
@@ -52,7 +52,7 @@ impl WasmInstance {
     fn get_memory(&mut self, name: GString) -> Option<Gd<WasmMemory>> {
         let gd_store = self.store.clone();
         return match self.instance.get_memory(&mut self.store.bind_mut().store, &name.to_string()) {
-            Some(memory) => Some(WasmMemory::new_from(memory, gd_store)),
+            Some(memory) => Some(WasmMemory::new_from(memory, gd_store.into_dyn().upcast())),
             None => None,
         };
     }
