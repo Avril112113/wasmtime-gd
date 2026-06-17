@@ -48,4 +48,12 @@ impl WasmLinker {
             .or_print_error(&format!("Failed to define \"{}::{}\"", module, name))
             .is_some();
     }
+
+    /// Simply calls the [param callable] with this linker and [param store] as arguments.
+    /// 
+    /// This allows `linker.define_feature(store, MyFeature.define_feature)` pattern.
+    #[func]
+    fn define_feature(gd_self: Gd<Self>, store: Gd<WasmStore>, callable: Callable) -> Variant {
+        return callable.call(&vec![gd_self.to_variant(), store.to_variant()]);
+    }
 }

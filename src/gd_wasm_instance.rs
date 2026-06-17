@@ -5,6 +5,8 @@ use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, wasm_types::{g
 /// An instantiated Wasmtime Module.
 /// 
 /// **DO NOT USE `WasmInstance.new()` it will return null.**
+/// 
+/// Instead, use [method WasmLinker.instantiate]
 #[derive(GodotClass)]
 #[class(base=RefCounted)]
 pub struct WasmInstance {
