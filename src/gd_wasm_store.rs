@@ -46,13 +46,3 @@ impl GdAsContext for WasmStore {
 		return self.store.as_context_mut();
 	}
 }
-
-// impl AsDyn<dyn wasmtime::GdAsContext> for WasmStore {
-// 	fn dyn_upcast(&self) -> &(dyn wasmtime::GdAsContext + 'static) {
-// 		self
-// 	}
-
-// 	fn dyn_upcast_mut(&mut self) -> &mut (dyn wasmtime::GdAsContext + 'static) {
-// 		self
-// 	}
-// }
