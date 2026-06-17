@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory}};
+use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory}};
 
 /// An instantiated Wasmtime Module.
 /// 
@@ -53,5 +53,13 @@ impl WasmInstance {
             Some(memory) => Some(WasmMemory::new_from(memory, gd_store)),
             None => None,
         };
+    }
+
+    #[func]
+    fn get_module(&mut self) -> Gd<WasmModule> {
+        let store = &mut self.store.bind_mut().store;
+        let module = self.instance.module(store);
+        // `.clone()` is actually just for an Arc<>, so it's cheap.
+        return WasmModule::from_module(module.clone());
     }
 }

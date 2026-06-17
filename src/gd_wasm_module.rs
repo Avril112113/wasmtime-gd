@@ -1,6 +1,6 @@
 use godot::{classes::{FileAccess, file_access::ModeFlags}, prelude::*};
 
-use crate::{gd_wasm_engine::WasmEngine, utils_errors::*};
+use crate::{gd_wasm_engine::WasmEngine, gd_wasm_types::ValTypeGodot, utils_errors::*};
 
 /// A Wasmtime Linker, to link wasm modules/instances together and provide imports from the host.
 /// 
@@ -20,6 +20,12 @@ impl IRefCounted for WasmModule {
 
 #[godot_api]
 impl WasmModule {
+    pub fn from_module(module: wasmtime::Module) -> Gd<Self> {
+        return Gd::from_object(Self {
+            module,
+        });
+    }
+
     /// Create new Wasmtime module.
     /// 
     /// [param bytes] can be either a WASM binary or WAT text.
