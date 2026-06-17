@@ -34,7 +34,7 @@ impl WasmCaller {
         self.caller = None;
     }
 
-    #[func]
+    #[func(gd_self)]
     fn get_export(gd_self: Gd<Self>, name: GString) -> Variant {
         match gd_self.clone().bind_mut().caller.as_mut().unwrap().get_export(&name.to_string()) {
             Some(exnter) => exnter.to_variant(gd_self.into_dyn().upcast()),

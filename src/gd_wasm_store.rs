@@ -31,7 +31,7 @@ impl WasmStore {
 	}
 
 	#[func]
-	pub fn same_as(&self, other: DynGd<RefCounted, dyn AsContext<Data = ()>>) -> bool {
+	pub fn same_as(&self, other: DynGd<RefCounted, dyn GdAsContext>) -> bool {
 		return self.as_context().same_store_as(&other.dyn_bind().as_context());
 	}
 }
