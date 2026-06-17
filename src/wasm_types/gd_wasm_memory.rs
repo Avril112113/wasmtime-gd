@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_store::WasmStore, utils_errors::*};
+use crate::{gd_wasm_store::WasmStore, to_from_variant::ToFromVariant, utils_errors::*};
 use super::WasmAsExtern;
 
 /// A Wasmtime Extern::Memory
@@ -65,6 +65,11 @@ impl WasmMemory {
 			memory,
 			store
 		));
+	}
+
+	#[func]
+	fn get_memory_type(&self) -> Variant {
+		return self.memory.ty(&self.store.bind().store).to_variant();
 	}
 
 	#[func]

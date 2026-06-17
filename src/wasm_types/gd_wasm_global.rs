@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use wasmtime::{GlobalType, Mutability, Val::*, ValType};
 
-use crate::{gd_wasm_store::WasmStore, utils_errors::*, wasm_types::ValFromVariantByValType};
+use crate::{gd_wasm_store::WasmStore, to_from_variant::ToFromVariant, utils_errors::*, wasm_types::{ValFromVariantByValType, gd_wasm_func::WasmFunc}};
 use super::WasmAsExtern;
 
 
@@ -82,29 +82,28 @@ impl WasmGlobal {
     //     return Self::new_global(store, ValType::V128, mutable, V128(default));
     // }
 
+    #[func]
+    fn get_global_type(&mut self) -> Variant {
+        return self.global.ty(&mut self.store.bind_mut().store).to_variant();
+    }
+
     // TODO: ValType::Ref
 
     /// Get's the value of the Global.
     #[func]
     fn get(&mut self) -> Variant {
-        match self.global.get(&mut self.store.bind_mut().store) {
+        match self.global.get(&mut self.store.clone().bind_mut().store) {
             I32(value) => Variant::from(value),
             I64(value) => Variant::from(value),
             F32(value) => Variant::from(f32::from_bits(value)),
             F64(value) => Variant::from(f64::from_bits(value)),
             V128(_value) => todo!(),
-            FuncRef(_value) => todo!(),
+            FuncRef(value) => value.map_or_else(Variant::nil, |value| WasmFunc::new_from(value, self.store.clone()).to_variant()),
             ExternRef(_value) => todo!(),
             AnyRef(_value) => todo!(),
             ExnRef(_value) => todo!(),
             ContRef(_value) => todo!(),
         }
-    }
-
-    #[func]
-    fn get_type_string(&mut self) -> GString {
-        let global_type = self.global.ty(&mut self.store.bind_mut().store);
-        return format!("{}", global_type.content()).as_str().into();
     }
 
     #[func]

@@ -12,6 +12,20 @@ func _run() -> void:
 	if module == null:
 		return
 	
+	print("~ Imports ~")
+	var module_imports := module.get_imports()
+	for name in module_imports:
+		var import: Variant = module_imports[name]
+		print(name, " = ", import)
+	
+	print("~ Exports ~")
+	var module_exports := module.get_imports()
+	for name in module_exports:
+		var export: Variant = module_exports[name]
+		print(name, " = ", export)
+	
+	print()
+	
 	var store := WasmStore.new_with(engine)
 	var linker := WasmLinker.new_with(engine)
 	

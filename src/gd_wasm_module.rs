@@ -1,6 +1,6 @@
 use godot::{classes::{FileAccess, file_access::ModeFlags}, prelude::*};
 
-use crate::{gd_wasm_engine::WasmEngine, gd_wasm_types::ValTypeGodot, utils_errors::*};
+use crate::{gd_wasm_engine::WasmEngine, to_from_variant::ToFromVariant, utils_errors::*};
 
 /// A Wasmtime Linker, to link wasm modules/instances together and provide imports from the host.
 /// 
@@ -73,20 +73,20 @@ impl WasmModule {
     }
 
     #[func]
-    fn get_imports(&mut self) -> Dictionary<GString,Variant> {
-        let mut dict = Dictionary::new();
+    fn get_imports(&mut self) -> AnyDictionary {
+        let mut dict = Dictionary::<GString,Variant>::new();
         for export in self.module.imports() {
             dict.set(export.name(), &export.ty().to_variant());
         }
-        return dict;
+        return dict.upcast_any_dictionary();
     }
 
     #[func]
-    fn get_exports(&mut self) -> Dictionary<GString,Variant> {
-        let mut dict = Dictionary::new();
+    fn get_exports(&mut self) -> AnyDictionary {
+        let mut dict = Dictionary::<GString,Variant>::new();
         for export in self.module.exports() {
             dict.set(export.name(), &export.ty().to_variant());
         }
-        return dict;
+        return dict.upcast_any_dictionary();
     }
 }

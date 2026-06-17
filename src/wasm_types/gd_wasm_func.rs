@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_store::WasmStore, gd_wasm_types::ValTypeGodot, utils_errors::*, wasm_types::*};
+use crate::{gd_wasm_store::WasmStore, to_from_variant::ToFromVariant, utils_errors::*, wasm_types::*};
 use super::WasmAsExtern;
 
 
@@ -104,7 +104,7 @@ impl WasmFunc {
 	}
 
 	#[func]
-	fn get_wasm_type(&mut self) -> Variant {
+	fn get_func_type(&mut self) -> Variant {
 		let store = &mut self.store.bind_mut().store;
 		return self.func.ty(store).to_variant();
 	}
