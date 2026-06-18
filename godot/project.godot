@@ -18,6 +18,10 @@ config/name="lua-boxes-gd-test"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
