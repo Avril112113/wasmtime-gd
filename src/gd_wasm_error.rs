@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicBool;
 
-use godot::prelude::*;
+use godot::{meta::AsArg, prelude::*};
 
 use crate::gd_script_stuff::GDScriptStuff;
 
@@ -10,7 +10,6 @@ static INCLUDE_RUST_BACKTRACE: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug)]
 pub struct WasmGodotError {
-	pub msg: String,
 	pub data: fragile::Fragile<Variant>,
 }
 
@@ -18,7 +17,15 @@ impl std::error::Error for WasmGodotError {}
 
 impl std::fmt::Display for WasmGodotError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "GodotError: {}", self.msg)
+		write!(f, "GodotError: {}", self.data.get())
+	}
+}
+
+impl WasmGodotError {
+	pub fn new(data: impl AsArg<Variant>) -> Self {
+		Self {
+			data: fragile::Fragile::new(data.into_arg().to_owned()),
+		}
 	}
 }
 
@@ -38,10 +45,7 @@ impl IRefCounted for WasmError {
 	fn init(_base: Base<Self::Base>) -> Self {
 		// Normally we'd panic on using this, but since we have a property, Godot creates a new one upon init.
 		Self {
-			error: Some(wasmtime::Error::new(WasmGodotError {
-				msg: "Anonymous WasmError (avoid using `WasmError.new()`)".to_string(),
-				data: fragile::Fragile::new(Variant::nil()),
-			})),
+			error: Some(wasmtime::Error::new(WasmGodotError::new("Anonymous WasmError (avoid using `WasmError.new()`)"))),
 			prop_data: PhantomVar::default(),
 		}
 	}
@@ -57,12 +61,9 @@ impl WasmError {
 	}
 
 	#[func]
-	fn new_from(msg: GString, data: Variant) -> Gd<Self> {
+	fn new_from(data: Variant) -> Gd<Self> {
 		return Gd::from_object(Self {
-			error: Some(wasmtime::Error::new(WasmGodotError {
-				msg: msg.to_string(),
-				data: fragile::Fragile::new(data),
-			})),
+			error: Some(wasmtime::Error::new(WasmGodotError::new(&data))),
 			prop_data: PhantomVar::default(),
 		});
 	}
