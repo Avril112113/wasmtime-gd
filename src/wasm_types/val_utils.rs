@@ -1,41 +1,72 @@
 use godot::prelude::*;
-use wasmtime::{Val::*, ValType};
+use wasmtime::{AsContextMut, Extern, ExternRef, HeapType, RefType, Val, ValType};
+
+use crate::{to_from_variant::to_from_godot::ToFromVariantContext, wasm_types::gd_wasm_func::WasmFunc};
 
 
 pub trait ValFromVariantByValType {
-	fn val_from(&self, variant: Variant) -> Result<wasmtime::Val, ConvertError>;
+	fn val_from(&self, variant: Variant, context: impl AsContextMut) -> Result<Val, ConvertError>;
 }
 
 impl ValFromVariantByValType for ValType {
-	fn val_from(&self, variant: Variant) -> Result<wasmtime::Val, ConvertError> {
+	fn val_from(&self, variant: Variant, context: impl AsContextMut) -> Result<Val, ConvertError> {
 		return Ok(match self {
-			ValType::I32 => I32(variant.try_to()?),
-			ValType::I64 => I64(variant.try_to()?),
-			ValType::F32 => F32(variant.try_to()?),
-			ValType::F64 => F32(variant.try_to()?),
+			ValType::I32 => Val::I32(variant.try_to()?),
+			ValType::I64 => Val::I64(variant.try_to()?),
+			ValType::F32 => Val::F32(variant.try_to()?),
+			ValType::F64 => Val::F32(variant.try_to()?),
 			ValType::V128 => todo!(),
-			ValType::Ref(_ref_type) => todo!(),
+			ValType::Ref(ref_type) => ref_type.val_from(variant, context)?,
 		});
 	}
 }
 
-pub trait ValIntoVariant {
-	fn into_variant(&self) -> Variant;
+impl ValFromVariantByValType for RefType {
+	fn val_from(&self, variant: Variant, context: impl AsContextMut) -> Result<Val, ConvertError> {
+		if variant.is_nil() {
+			return Ok(Val::null_ref(self.heap_type()));
+		}
+		
+		return Ok(match self.heap_type() {
+			HeapType::Extern | HeapType::NoExtern
+				=> Val::ExternRef(Some(ExternRef::new(context, Extern::from_variant(&variant)?).expect("TODO: Handle wasmtime::Error"))),
+			HeapType::Func | HeapType::ConcreteFunc(_) | HeapType::NoFunc
+				=> Val::FuncRef(Some(variant.try_to::<Gd<WasmFunc>>()?.bind().func)),
+			HeapType::Any => todo!(),
+			HeapType::Eq => todo!(),
+			HeapType::I31 => todo!(),
+			HeapType::Array => todo!(),
+			HeapType::ConcreteArray(_array_type) => todo!(),
+			HeapType::Struct => todo!(),
+			HeapType::ConcreteStruct(_struct_type) => todo!(),
+			HeapType::Exn => todo!(),
+			HeapType::ConcreteExn(_exn_type) => todo!(),
+			HeapType::ConcreteCont(_cont_type) => todo!(),
+			HeapType::Cont => todo!(),
+			HeapType::NoCont => todo!(),
+			HeapType::None => todo!(),
+			HeapType::NoExn => todo!(),
+		});
+	}
 }
 
-impl ValIntoVariant for wasmtime::Val {
-	fn into_variant(&self) -> Variant {
+pub trait ValToVariant {
+	fn to_variant(&self) -> Variant;
+}
+
+impl ValToVariant for Val {
+	fn to_variant(&self) -> Variant {
 		match self {
-			I32(value) => Variant::from(*value),
-			I64(value) => Variant::from(*value),
-			F32(value) => Variant::from(f32::from_bits(*value)),
-			F64(value) => Variant::from(f64::from_bits(*value)),
-			V128(_v128) => todo!(),
-			FuncRef(_func) => todo!(),
-			ExternRef(_rooted) => todo!(),
-			AnyRef(_rooted) => todo!(),
-			ExnRef(_rooted) => todo!(),
-			ContRef(_cont_ref) => todo!(),
+			Val::I32(value) => Variant::from(*value),
+			Val::I64(value) => Variant::from(*value),
+			Val::F32(value) => Variant::from(f32::from_bits(*value)),
+			Val::F64(value) => Variant::from(f64::from_bits(*value)),
+			Val::V128(_v128) => todo!(),
+			Val::FuncRef(_func) => todo!(),
+			Val::ExternRef(_rooted) => todo!(),
+			Val::AnyRef(_rooted) => todo!(),
+			Val::ExnRef(_rooted) => todo!(),
+			Val::ContRef(_cont_ref) => todo!(),
 		}
 	}
 }

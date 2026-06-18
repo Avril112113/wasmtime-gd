@@ -10,5 +10,5 @@ pub trait ToFromVariant {
 
 pub trait ToFromVariantContext {
 	fn to_variant(&self, context: DynGd<RefCounted, dyn GdAsContext>) -> Variant;
-	fn from_variant(context: DynGd<RefCounted, dyn GdAsContext>, variant: &Variant) -> Result<Self, ConvertError> where Self: Sized;
+	fn from_variant(variant: &Variant) -> Result<Self, ConvertError> where Self: Sized;
 }

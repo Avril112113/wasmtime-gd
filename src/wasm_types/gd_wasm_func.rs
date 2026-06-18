@@ -80,7 +80,7 @@ impl WasmFunc {
 		let func = wasmtime::Func::new(
 			&mut context.dyn_bind_mut().as_context_mut(), func_type.clone(),
 			move |caller, params, results| {
-				let mut varags: Vec<Variant> = params.iter().map(|v| v.into_variant()).collect();
+				let mut varags: Vec<Variant> = params.iter().map(|v| v.to_variant()).collect();
 				
 				let gd_caller;
 				unsafe {
@@ -107,14 +107,14 @@ impl WasmFunc {
 				
 				match results.len() {
 					0 => {},
-					1 => results[0] = func_type.result(0).unwrap().val_from(result).into_trap("results[0]")?,
+					1 => results[0] = func_type.result(0).unwrap().val_from(result, &mut gd_caller.clone().bind_mut().as_context_mut()).into_trap("results[0]")?,
 					len => {
 						let array: Array<Variant> = result.try_to().into_trap("Expected return of Array[Variant]")?;
 						if len != array.len() {
 							return Err(wasmtime::Error::msg(format!("Incorrect return value count, expected {} but got {}", len, array.len())));
 						}
 						for i in 0..len {
-							results[i] = func_type.result(i).unwrap().val_from(array.at(i)).into_trap(&format!("results[{}]", i))?;
+							results[i] = func_type.result(i).unwrap().val_from(array.at(i), &mut gd_caller.clone().bind_mut().as_context_mut()).into_trap(&format!("results[{}]", i))?;
 						}
 					}
 				}
@@ -158,7 +158,7 @@ impl WasmFunc {
 		}
 
 		let params = param_types.enumerate().map(|(i, ty)| -> Result<wasmtime::Val, MyGodotError<Variant>> {
-			return ty.val_from(args.at(i)).or_godot_error(&format!("Invalid arg type arg #{}, expected {}", i, ty), Variant::nil());
+			return ty.val_from(args.at(i), &mut context_mut).or_godot_error(&format!("Invalid arg type arg #{}, expected {}", i, ty), Variant::nil());
 		}).collect::<Result<Vec<wasmtime::Val>, MyGodotError<Variant>>>()?;
 		let mut results = self.func.ty(&mut context_mut).results().map(|ty| {
 			if let Some(val) = ty.default_value() {
@@ -180,7 +180,7 @@ impl WasmFunc {
 		return match self.call_wasm_internal(args)? {
 			Ok(results) => match results.len() {
 				0 => Ok(Variant::nil()),
-				_ => Ok(Array::from_iter(results.iter().map(|val| val.into_variant())).to_variant())
+				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant())).to_variant())
 			},
 			Err(error) => Ok(WasmError::new_from_error(error).to_variant()),
 		};
@@ -194,7 +194,7 @@ impl WasmFunc {
 		return match self.call_wasm_internal(args)? {
 			Ok(results) => match results.len() {
 				0 => Ok(Variant::nil()),
-				_ => Ok(Array::from_iter(results.iter().map(|val| val.into_variant())).to_variant())
+				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant())).to_variant())
 			},
 			Err(error) => {
 				let gd_error = WasmError::new_from_error(error);

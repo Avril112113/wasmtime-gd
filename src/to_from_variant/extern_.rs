@@ -16,7 +16,7 @@ impl ToFromVariantContext for wasmtime::Extern {
 		}
 	}
 
-	fn from_variant(_context: DynGd<RefCounted, dyn GdAsContext>, variant: &Variant) -> Result<Self, ConvertError> where Self: Sized {
+	fn from_variant(variant: &Variant) -> Result<Self, ConvertError> where Self: Sized {
 		let gd_extern = variant.try_to::<DynGd<RefCounted, dyn WasmAsExtern>>()?;
 		return Ok(gd_extern.dyn_bind().as_extern());
 	}
