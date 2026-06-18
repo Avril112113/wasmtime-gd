@@ -8,6 +8,7 @@ mod utils;
 mod to_from_variant;
 mod wasm_types;
 
+mod gd_wasm_error;
 mod gd_wasm_config;
 mod gd_wasm_module;
 mod gd_wasm_engine;

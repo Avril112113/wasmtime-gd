@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_caller::WasmCaller, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
+use crate::{gd_script_stuff::GDScriptStuff, gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
 use super::WasmAsExtern;
 
 
@@ -92,6 +92,12 @@ impl WasmFunc {
 				
 				// let result = callable.clone().0.call(&varags);
 				let result = callable.get().call(&varags);
+
+				if let Ok(mut err) = result.try_to::<Gd<WasmError>>() {
+					let error = err.bind_mut().error.take()
+						.ok_or_else(|| wasmtime::Error::msg("WasmError's error was already taken! Do not reuse WasmError!"))?;
+					return Err(error);
+				}
 				
 				match results.len() {
 					0 => {},
@@ -134,10 +140,7 @@ impl WasmFunc {
 		return Array::from_iter(self.func.ty(context).results().map(|ty| ty.to_variant()));
 	}
 
-	// https://github.com/godot-rust/gdext/issues/1472
-	/// Returns an array of values, or `nil` if the function has no returns.
-	#[func]
-	fn call_wasm(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
+	fn call_wasm_internal(&mut self, args: Array<Variant>) -> Result<wasmtime::Result<Vec<wasmtime::Val>>, MyGodotError<Variant>> {
 		let mut dyn_context_mut = self.context.dyn_bind_mut();
 		let mut context_mut = &mut dyn_context_mut.as_context_mut();
 		
@@ -161,12 +164,39 @@ impl WasmFunc {
 			};
 		}).collect::<Vec<wasmtime::Val>>();
 
-		self.func.call(&mut context_mut, params.as_slice(), results.as_mut_slice())
-			.or_godot_error("Call error:", Variant::nil())?;
+		return Ok(self.func.call(&mut context_mut, params.as_slice(), results.as_mut_slice()).map(|()| results));
+	}
 
-		return match results.len() {
-			0 => Ok(Variant::nil()),
-			_ => Ok(Array::from_iter(results.iter().map(|val| val.into_variant())).to_variant())
+	// https://github.com/godot-rust/gdext/issues/1472
+	/// Returns an array of values, or `nil` if the function has no returns. [br]
+	/// Otherwise returns [WasmError] in the case of an error (Trap or Exception).
+	#[func]
+	fn call_wasm(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
+		return match self.call_wasm_internal(args)? {
+			Ok(results) => match results.len() {
+				0 => Ok(Variant::nil()),
+				_ => Ok(Array::from_iter(results.iter().map(|val| val.into_variant())).to_variant())
+			},
+			Err(error) => Ok(WasmError::new_from_error(error).to_variant()),
+		};
+	}
+
+	// https://github.com/godot-rust/gdext/issues/1472
+	/// Returns an array of values, or `nil` if the function has no returns. [br]
+	/// Otherwise returns [WasmError] in the case of an error (Trap or Exception). [br]
+	/// 
+	/// Same as [member call_wasm] except in the case of an error, it always prints it. 
+	#[func]
+	fn call_wasm_and_print_err(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
+		return match self.call_wasm_internal(args)? {
+			Ok(results) => match results.len() {
+				0 => Ok(Variant::nil()),
+				_ => Ok(Array::from_iter(results.iter().map(|val| val.into_variant())).to_variant())
+			},
+			Err(error) => {
+				GDScriptStuff::print_error(&format!("WASM returned an error: {}", error), None);
+				Ok(WasmError::new_from_error(error).to_variant())
+			},
 		};
 	}
 }
