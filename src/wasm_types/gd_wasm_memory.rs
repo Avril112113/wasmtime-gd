@@ -133,7 +133,44 @@ impl WasmMemory {
 	}
 
 	#[func]
+	fn write_i8(&mut self, offset: i64, value: i8) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	#[func]
+	fn write_u8(&mut self, offset: i64, value: u8) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	#[func]
+	fn write_i16(&mut self, offset: i64, value: i16) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	#[func]
+	fn write_u16(&mut self, offset: i64, value: u16) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	#[func]
 	fn write_i32(&mut self, offset: i64, value: i32) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	#[func]
+	fn write_u32(&mut self, offset: i64, value: u32) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	#[func]
+	fn write_i64(&mut self, offset: i64, value: i64) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	/// NOTE: Godot numbers can't represent a u64, max value is i64.
+	#[func]
+	fn write_u64(&mut self, offset: i64, value: i64) -> MyGodotResult<bool> {
+		let value: u64 = IntoMyGodotResult::or_godot_error(value.try_into(), &format!("param value is out of bounds of u64 (between 0 - {})", u64::MAX), false).without_err()?;
 		return self._write(offset, &value.to_le_bytes());
 	}
 
@@ -154,10 +191,52 @@ impl WasmMemory {
 	}
 
 	#[func]
+	fn read_i8(&mut self, offset: i64) -> MyGodotResult<i8> {
+		let mut bytes = vec![0; size_of::<i8>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(i8::from_le_bytes(bytes.as_slice().try_into().unwrap()));
+	}
+
+	#[func]
+	fn read_u8(&mut self, offset: i64) -> MyGodotResult<u8> {
+		let mut bytes = vec![0; size_of::<u8>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(u8::from_le_bytes(bytes.as_slice().try_into().unwrap()));
+	}
+
+	#[func]
+	fn read_i16(&mut self, offset: i64) -> MyGodotResult<i16> {
+		let mut bytes = vec![0; size_of::<i16>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(i16::from_le_bytes(bytes.as_slice().try_into().unwrap()));
+	}
+
+	#[func]
+	fn read_u16(&mut self, offset: i64) -> MyGodotResult<u16> {
+		let mut bytes = vec![0; size_of::<u16>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(u16::from_le_bytes(bytes.as_slice().try_into().unwrap()));
+	}
+
+	#[func]
 	fn read_i32(&mut self, offset: i64) -> MyGodotResult<i32> {
 		let mut bytes = vec![0; size_of::<i32>()];
 		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
 		return Ok(i32::from_le_bytes(bytes.as_slice().try_into().unwrap()));
+	}
+
+	#[func]
+	fn read_u32(&mut self, offset: i64) -> MyGodotResult<u32> {
+		let mut bytes = vec![0; size_of::<u32>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(u32::from_le_bytes(bytes.as_slice().try_into().unwrap()));
+	}
+
+	#[func]
+	fn read_i64(&mut self, offset: i64) -> MyGodotResult<i64> {
+		let mut bytes = vec![0; size_of::<i64>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(i64::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
     #[func]
