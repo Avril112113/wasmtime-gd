@@ -1,5 +1,5 @@
 
-use godot::{global::{PrintRecord, print_custom}, meta::{Element, error::{CallOutcome, ErrorToGodot}}};
+use godot::{global::{PrintRecord, godot_print, print_custom}, meta::{Element, error::{CallOutcome, ErrorToGodot}}};
 
 use crate::gd_script_stuff::{GDScriptStuff, ToPrintSourceOption};
 
@@ -17,6 +17,14 @@ impl<T> MyGodotError<T> {
 			err: None,
 		};
 	}
+
+	pub fn with_value<TNew>(self, new_value: TNew) -> MyGodotError::<TNew> {
+		return MyGodotError::<TNew> {
+			value: new_value,
+			msg: self.msg,
+			err: self.err,
+		};
+	}
 }
 
 impl<T: Element> ErrorToGodot<T> for MyGodotError<T> {
@@ -29,12 +37,16 @@ impl<T: Element> ErrorToGodot<T> for MyGodotError<T> {
 				let frame_info = GDScriptStuff::get_last_frame_info();
 				let source = frame_info.to_print_source();
 				
-				let rationale = err.map(|err| err.as_ref().to_string());
+				let message = if let Some(err) = err.as_ref() {
+					format!("{}: {}", msg, err)
+				} else {
+					format!("{}", msg)
+				};
 
 				print_custom(PrintRecord {
 					level: godot::global::PrintLevel::Error,
-					message: msg.as_str(),
-					rationale: rationale.as_deref(),
+					message: message.as_str(),
+					rationale: None,
 					source,
 					editor_notify: false,
 				});
@@ -75,11 +87,16 @@ impl<TRes, TErrRes> IntoMyGodotResultAlt<TRes,TErrRes> for Result<TRes,()> {
 
 pub(crate) trait IntoMyGodotResultImpl<TRes,TErrRes> {
 	fn without_err(self) -> Result<TRes, MyGodotError<TErrRes>>;
+	fn with_err_value<TErrResNew>(self, value: TErrResNew) -> Result<TRes, MyGodotError<TErrResNew>>;
 }
 
 impl<TRes, TErrRes> IntoMyGodotResultImpl<TRes,TErrRes> for Result<TRes,MyGodotError<TErrRes>> {
 	/// Makes the Rust error not printed to Godot.
 	fn without_err(self) -> Result<TRes, MyGodotError<TErrRes>> {
 		return self.map_err(MyGodotError::without_err);
+	}
+	
+	fn with_err_value<TErrResNew>(self, value: TErrResNew) -> Result<TRes, MyGodotError<TErrResNew>> {
+		return self.map_err(|err| MyGodotError::with_value(err, value));
 	}
 }

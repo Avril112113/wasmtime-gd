@@ -15,8 +15,8 @@ impl<TRes, TErr:Into<anyhow::Error>> IntoMyGodotOption<TRes> for Result<TRes,TEr
 			
 			print_custom(PrintRecord {
 				level: godot::global::PrintLevel::Error,
-				message: msg,
-				rationale: Some(&err.into().to_string()),
+				message: format!("{}: {}", msg, &err.into().to_string()).as_str(),
+				rationale: None,
 				source,
 				editor_notify: false,
 			});
