@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_script_stuff::GDScriptStuff, gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
+use crate::{gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
 use super::WasmAsExtern;
 
 
@@ -45,6 +45,7 @@ impl WasmFunc {
 		})
 	}
 
+	/// Ensure the callable stays valid! See this issue: https://github.com/godotengine/godot/issues/74990
 	#[func]
 	fn from_callable(mut context: DynGd<RefCounted, dyn GdAsContext>, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable) -> MyGodotResult<Option<Gd<Self>>> {
 		let gd_context: DynGd<RefCounted, _> = context.clone();
@@ -90,8 +91,13 @@ impl WasmFunc {
 				});
 				varags.insert(0, gd_caller.to_variant());
 				
+				let callable = callable.get();
+				if !callable.is_valid() {
+					// Adding the `callable` to the msg does provide additional info, like it's name it if has one.
+					return Err(wasmtime::Error::msg(format!("Callable is invalid! ({})", callable)));
+				}
 				// let result = callable.clone().0.call(&varags);
-				let result = callable.get().call(&varags);
+				let result = callable.call(&varags);
 
 				if let Ok(mut err) = result.try_to::<Gd<WasmError>>() {
 					let error = err.bind_mut().error.take()
@@ -101,14 +107,14 @@ impl WasmFunc {
 				
 				match results.len() {
 					0 => {},
-					1 => results[0] = func_type.result(0).unwrap().val_from(result).into_trap()?,
+					1 => results[0] = func_type.result(0).unwrap().val_from(result).into_trap("results[0]")?,
 					len => {
-						let array: Array<Variant> = result.try_to().into_trap()?;
+						let array: Array<Variant> = result.try_to().into_trap("Expected return of Array[Variant]")?;
 						if len != array.len() {
 							return Err(wasmtime::Error::msg(format!("Incorrect return value count, expected {} but got {}", len, array.len())));
 						}
 						for i in 0..len {
-							results[i] = func_type.result(i).unwrap().val_from(array.at(i)).into_trap()?;
+							results[i] = func_type.result(i).unwrap().val_from(array.at(i)).into_trap(&format!("results[{}]", i))?;
 						}
 					}
 				}
@@ -194,8 +200,9 @@ impl WasmFunc {
 				_ => Ok(Array::from_iter(results.iter().map(|val| val.into_variant())).to_variant())
 			},
 			Err(error) => {
-				GDScriptStuff::print_error(&format!("WASM returned an error: {}", error), None);
-				Ok(WasmError::new_from_error(error).to_variant())
+				let gd_error = WasmError::new_from_error(error);
+				gd_error.bind().print();
+				Ok(gd_error.to_variant())
 			},
 		};
 	}
