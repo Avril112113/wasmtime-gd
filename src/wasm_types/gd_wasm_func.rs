@@ -174,10 +174,9 @@ impl WasmFunc {
 	}
 
 	// https://github.com/godot-rust/gdext/issues/1472
-	/// Returns an array of values, or `nil` if the function has no returns. [br]
-	/// Otherwise returns [WasmError] in the case of an error (Trap or Exception).
+	/// Same as [member call_wasm] except the error is not printed.
 	#[func]
-	fn call_wasm(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
+	fn call_wasm_catch(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
 		return match self.call_wasm_internal(args)? {
 			Ok(results) => match results.len() {
 				0 => Ok(Variant::nil()),
@@ -189,11 +188,9 @@ impl WasmFunc {
 
 	// https://github.com/godot-rust/gdext/issues/1472
 	/// Returns an array of values, or `nil` if the function has no returns. [br]
-	/// Otherwise returns [WasmError] in the case of an error (Trap or Exception). [br]
-	/// 
-	/// Same as [member call_wasm] except in the case of an error, it always prints it. 
+	/// Otherwise returns [WasmError] in the case of an error and also pushes the error.
 	#[func]
-	fn call_wasm_and_print_err(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
+	fn call_wasm(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
 		return match self.call_wasm_internal(args)? {
 			Ok(results) => match results.len() {
 				0 => Ok(Variant::nil()),
