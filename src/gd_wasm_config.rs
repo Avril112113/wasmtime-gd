@@ -56,7 +56,20 @@ make_config_setter!(enable_compiler, enable: bool);
 
 make_config_setter!(debug_info, enable: bool);
 make_config_setter!(guest_debug, enable: bool);
-// make_config_setter!(wasm_backtrace_details, enable: WasmBacktraceDetails);
+make_config_setter!(
+    /// [param enable] can be one of the following;  
+    /// - `Enable`  
+    /// - `Disable`  
+    /// - `Environment`  
+    wasm_backtrace_details, enable: GString => {
+        match enable.to_string().as_str() {
+            "Enable" => Ok(wasmtime::WasmBacktraceDetails::Enable),
+            "Disable" => Ok(wasmtime::WasmBacktraceDetails::Disable),
+            "Environment" => Ok(wasmtime::WasmBacktraceDetails::Environment),
+            _ => Err(ConvertError::new("Invalid WasmBacktraceDetails, expected \"Enable\", \"Disable\" or \"Environment\"")),
+        }
+    }
+);
 // make_config_setter!(wasm_backtrace_max_frames, limit: Option<NonZeroUsize>);
 make_config_setter!(consume_fuel, enable: bool);
 // make_config_setter!(operator_cost, cost: OperatorCost);
