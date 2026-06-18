@@ -1,5 +1,5 @@
 
-use godot::{global::{PrintRecord, godot_print, print_custom}, meta::{Element, error::{CallOutcome, ErrorToGodot}}};
+use godot::{global::{PrintRecord, print_custom}, meta::{Element, error::{CallOutcome, ErrorToGodot}}};
 
 use crate::gd_script_stuff::{GDScriptStuff, ToPrintSourceOption};
 
