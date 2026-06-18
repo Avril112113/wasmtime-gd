@@ -43,6 +43,7 @@ impl WasmMemory {
 		})
 	}
 
+	/// Creates a new [WasmMemory]
 	#[func]
 	fn new_memory(&self, mut context: DynGd<RefCounted, dyn GdAsContext>, minimum: i64, #[opt(default=-1)] maximum: i64, #[opt(default=false)] is_64: bool) -> Option<Gd<WasmMemory>> {
 		let mut memory_builder = wasmtime::MemoryTypeBuilder::new();
@@ -67,44 +68,53 @@ impl WasmMemory {
 		));
 	}
 
+	/// Returns the memory type. The contents may change in the future, only pass this value back to wasmtime-gd.
 	#[func]
 	fn get_memory_type(&self) -> Variant {
 		return self.memory.ty(&self.context.dyn_bind().as_context()).to_variant();
 	}
 
+	/// Returns the size, in units of pages, of this Wasm memory.
 	#[func]
 	fn size(&self) -> i64 {
 		return self.memory.size(&self.context.dyn_bind().as_context()) as i64;
 	}
 
+	/// Returns the byte length of this memory.
 	#[func]
 	fn data_size(&self) -> i64 {
 		return self.memory.data_size(&self.context.dyn_bind().as_context()) as i64;
 	}
 
+	/// Returns the size of a page, in bytes, for this memory.
 	#[func]
 	fn page_size(&self) -> i64 {
 		return self.memory.page_size(&self.context.dyn_bind().as_context()) as i64;
 	}
 
+	/// Returns minimum number of WebAssembly pages this memory must have.
 	#[func]
 	fn minimum(&self) -> i64 {
 		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
 		return ty.minimum() as i64;
 	}
 
+	/// Returns the optionally-specified maximum number of pages this memory can have. [br]
+	/// If there is no limit, returns i64::MAX
 	#[func]
 	fn maximum(&self) -> i64 {
 		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
 		return ty.maximum().map_or(i64::MAX, |v| v as i64);
 	}
 
+	/// Returns whether this is a 64-bit memory or not.
 	#[func]
 	fn is_64(&self) -> bool {
 		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
 		return ty.is_64();
 	}
 
+	/// Returns whether this is a shared memory or not.
 	#[func]
 	fn is_shared(&self) -> bool {
 		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
@@ -127,46 +137,55 @@ impl WasmMemory {
 		return Ok(true);
 	}
 
+	/// Safely writes [param bytes] to this memory at the given offset.
 	#[func]
 	fn write(&mut self, offset: i64, bytes: PackedByteArray) -> MyGodotResult<bool> {
 		return self._write(offset, bytes.as_slice());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset.
 	#[func]
 	fn write_i8(&mut self, offset: i64, value: i8) -> MyGodotResult<bool> {
 		return self._write(offset, &value.to_le_bytes());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset.
 	#[func]
 	fn write_u8(&mut self, offset: i64, value: u8) -> MyGodotResult<bool> {
 		return self._write(offset, &value.to_le_bytes());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset.
 	#[func]
 	fn write_i16(&mut self, offset: i64, value: i16) -> MyGodotResult<bool> {
 		return self._write(offset, &value.to_le_bytes());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset.
 	#[func]
 	fn write_u16(&mut self, offset: i64, value: u16) -> MyGodotResult<bool> {
 		return self._write(offset, &value.to_le_bytes());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset.
 	#[func]
 	fn write_i32(&mut self, offset: i64, value: i32) -> MyGodotResult<bool> {
 		return self._write(offset, &value.to_le_bytes());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset.
 	#[func]
 	fn write_u32(&mut self, offset: i64, value: u32) -> MyGodotResult<bool> {
 		return self._write(offset, &value.to_le_bytes());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset.
 	#[func]
 	fn write_i64(&mut self, offset: i64, value: i64) -> MyGodotResult<bool> {
 		return self._write(offset, &value.to_le_bytes());
 	}
 
+	/// Safely writes [param value] to this memory at the given offset. [br]
 	/// NOTE: Godot numbers can't represent a u64, max value is i64.
 	#[func]
 	fn write_u64(&mut self, offset: i64, value: i64) -> MyGodotResult<bool> {
@@ -190,6 +209,7 @@ impl WasmMemory {
 		return Ok(bytes);
 	}
 
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
 	#[func]
 	fn read_i8(&mut self, offset: i64) -> MyGodotResult<i8> {
 		let mut bytes = vec![0; size_of::<i8>()];
@@ -197,6 +217,7 @@ impl WasmMemory {
 		return Ok(i8::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
 	#[func]
 	fn read_u8(&mut self, offset: i64) -> MyGodotResult<u8> {
 		let mut bytes = vec![0; size_of::<u8>()];
@@ -204,6 +225,7 @@ impl WasmMemory {
 		return Ok(u8::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
 	#[func]
 	fn read_i16(&mut self, offset: i64) -> MyGodotResult<i16> {
 		let mut bytes = vec![0; size_of::<i16>()];
@@ -211,6 +233,7 @@ impl WasmMemory {
 		return Ok(i16::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
 	#[func]
 	fn read_u16(&mut self, offset: i64) -> MyGodotResult<u16> {
 		let mut bytes = vec![0; size_of::<u16>()];
@@ -218,6 +241,7 @@ impl WasmMemory {
 		return Ok(u16::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
 	#[func]
 	fn read_i32(&mut self, offset: i64) -> MyGodotResult<i32> {
 		let mut bytes = vec![0; size_of::<i32>()];
@@ -225,6 +249,7 @@ impl WasmMemory {
 		return Ok(i32::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
 	#[func]
 	fn read_u32(&mut self, offset: i64) -> MyGodotResult<u32> {
 		let mut bytes = vec![0; size_of::<u32>()];
@@ -232,6 +257,7 @@ impl WasmMemory {
 		return Ok(u32::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
 	#[func]
 	fn read_i64(&mut self, offset: i64) -> MyGodotResult<i64> {
 		let mut bytes = vec![0; size_of::<i64>()];
@@ -239,6 +265,8 @@ impl WasmMemory {
 		return Ok(i64::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
+	/// Check if 2 [WasmMemory]s are actually the same memory.
+	/// Note that, many separate [WasmMemory] objects can refer to the same memory!
     #[func]
     fn same_as(&mut self, other: Gd<WasmMemory>) -> bool {
         return self.context.dyn_bind().as_context().same_store_as(&other.bind().context.dyn_bind().as_context()) && self.memory.debug_index_in_store() == other.bind().memory.debug_index_in_store();

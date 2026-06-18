@@ -30,6 +30,7 @@ impl WasmInstance {
         };
     }
 
+    /// Get an exported [WasmGlobal] value by name.
     #[func]
     fn get_global(&mut self, name: GString) -> Option<Gd<WasmGlobal>> {
         let gd_store = self.store.clone();
@@ -39,6 +40,7 @@ impl WasmInstance {
         };
     }
 
+    /// Get an exported [WasmFunc] value by name.
     #[func]
     fn get_func(&mut self, name: GString) -> Option<Gd<WasmFunc>> {
         let gd_store = self.store.clone();
@@ -48,6 +50,7 @@ impl WasmInstance {
         };
     }
 
+    /// Get an exported [WasmMemory] value by name.
     #[func]
     fn get_memory(&mut self, name: GString) -> Option<Gd<WasmMemory>> {
         let gd_store = self.store.clone();
@@ -57,6 +60,7 @@ impl WasmInstance {
         };
     }
 
+    /// Gets the [WasmModule] which this instance was instantiated from.
     #[func]
     fn get_module(&mut self) -> Gd<WasmModule> {
         let store = &mut self.store.bind_mut().store;

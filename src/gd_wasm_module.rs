@@ -76,6 +76,8 @@ impl WasmModule {
 		return Some(Self::from_module(module));
 	}
 
+	/// Serialize the compiled WASM module, which can later be deserialized. Pre-compiling can be considerably faster (100x or more) [br]
+	/// Make sure to read the warning in [member deserialize]
 	#[func]
 	fn serialize(&self) -> MyGodotResult<PackedByteArray> {
 		let bytes = self.module.serialize().or_godot_error_fn("Failed to serialize WasmModule", PackedByteArray::new)?;
@@ -85,6 +87,7 @@ impl WasmModule {
 		return Ok(gd_bytes);
 	}
 
+	/// Get the imports this module expects to be provided in the [WasmLinker]
 	#[func]
 	fn get_imports(&mut self) -> AnyDictionary {
 		let mut dict = Dictionary::<GString,Variant>::new();
@@ -94,6 +97,7 @@ impl WasmModule {
 		return dict.upcast_any_dictionary();
 	}
 
+	/// Get the exports this module provides to the host and other modules.
 	#[func]
 	fn get_exports(&mut self) -> AnyDictionary {
 		let mut dict = Dictionary::<GString,Variant>::new();

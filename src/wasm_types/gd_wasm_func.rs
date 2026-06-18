@@ -45,6 +45,7 @@ impl WasmFunc {
 		})
 	}
 
+	/// Creates a new [WasmFunc] from a godot [Callable] [br]
 	/// Ensure the callable stays valid! See this issue: https://github.com/godotengine/godot/issues/74990
 	#[func]
 	fn from_callable(mut context: DynGd<RefCounted, dyn GdAsContext>, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable) -> MyGodotResult<Option<Gd<Self>>> {
@@ -125,6 +126,7 @@ impl WasmFunc {
 		return Ok(Some(Self::new_from(func, gd_context)));
 	}
 
+    /// Returns the func type. The contents may change in the future, only pass this value back to wasmtime-gd.
 	#[func]
 	fn get_func_type(&mut self) -> Variant {
 		let dyn_context = self.context.dyn_bind();
@@ -132,6 +134,7 @@ impl WasmFunc {
 		return self.func.ty(context).to_variant();
 	}
 
+	/// Get the types this func returns. The contents may change in the future, only pass this value back to wasmtime-gd.
 	#[func]
 	fn get_param_types(&mut self) -> Array<Variant> {
 		let dyn_context = self.context.dyn_bind();
@@ -139,6 +142,7 @@ impl WasmFunc {
 		return Array::from_iter(self.func.ty(context).params().map(|ty| ty.to_variant()));
 	}
 
+	/// Get the types this func returns. The contents may change in the future, only pass this value back to wasmtime-gd.
 	#[func]
 	fn get_result_types(&mut self) -> Array<Variant> {
 		let dyn_context = self.context.dyn_bind();

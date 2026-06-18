@@ -23,6 +23,7 @@ impl IRefCounted for WasmStore {
 
 #[godot_api]
 impl WasmStore {
+	/// Creates a new [WasmStore], which is a collection of WebAssembly instances and host-defined state.
 	#[func]
 	fn new_with(engine: Gd<WasmEngine>) -> Gd<Self> {
 		return Gd::from_object(Self {
@@ -30,6 +31,8 @@ impl WasmStore {
 		});
 	}
 
+	/// Check if 2 [WasmStore]s are actually the same store.
+	/// Note that, many separate [WasmStore] objects can refer to the same store!
 	#[func]
 	pub fn same_as(&self, other: DynGd<RefCounted, dyn GdAsContext>) -> bool {
 		return self.as_context().same_store_as(&other.dyn_bind().as_context());

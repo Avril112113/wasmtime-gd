@@ -22,6 +22,7 @@ impl IRefCounted for WasmLinker {
 
 #[godot_api]
 impl WasmLinker {
+    /// Create a new [WasmLinker], which is used to link wasm modules/instances together.
     #[func]
     fn new_with(engine: Gd<WasmEngine>) -> Gd<Self> {
 		return Gd::from_object(Self {

@@ -56,21 +56,25 @@ impl WasmGlobal {
         }));
     }
 
+    /// Create a new [WasmGlobal] which contains a i32.
     #[func]
     fn new_i32(context: DynGd<RefCounted, dyn GdAsContext>, default: i32, mutable: bool) -> Option<Gd<Self>> {
         return Self::new_global(context, ValType::I32, mutable, I32(default));
     }
 
+    /// Create a new [WasmGlobal] which contains a i64.
     #[func]
     fn new_i64(context: DynGd<RefCounted, dyn GdAsContext>, default: i64, mutable: bool) -> Option<Gd<Self>> {
         return Self::new_global(context, ValType::I64, mutable, I64(default));
     }
 
+    /// Create a new [WasmGlobal] which contains a f32.
     #[func]
     fn new_f32(context: DynGd<RefCounted, dyn GdAsContext>, default: f32, mutable: bool) -> Option<Gd<Self>> {
         return Self::new_global(context, ValType::F32, mutable, F32(default.to_bits()));
     }
 
+    /// Create a new [WasmGlobal] which contains a f64.
     #[func]
     fn new_f64(context: DynGd<RefCounted, dyn GdAsContext>, default: f64, mutable: bool) -> Option<Gd<Self>> {
         return Self::new_global(context, ValType::F64, mutable, F64(default.to_bits()));
@@ -82,6 +86,7 @@ impl WasmGlobal {
     //     return Self::new_global(store, ValType::V128, mutable, V128(default));
     // }
 
+    /// Returns the global type. The contents may change in the future, only pass this value back to wasmtime-gd.
     #[func]
     fn get_global_type(&mut self) -> Variant {
         return self.global.ty(&self.context.dyn_bind().as_context()).to_variant();
@@ -106,12 +111,14 @@ impl WasmGlobal {
         }
     }
 
+    /// If this global can be changed.
     #[func]
     fn is_mutable(&mut self) -> bool {
         let global_type = self.global.ty(&self.context.dyn_bind().as_context());
         return global_type.mutability() == Mutability::Var;
     }
 
+    /// Set the value of this global, make sure to check [param is_mutable] [br]
     /// Returns `false` when invalid value is set, along with a logged error.
     #[func]
     fn set(&mut self, value: Variant) -> MyGodotResult<bool> {
@@ -123,6 +130,8 @@ impl WasmGlobal {
         return Ok(true);
     }
 
+	/// Check if 2 [WasmGlobal]s are actually the same memory.
+	/// Note that, many separate [WasmGlobal] objects can refer to the same memory!
     #[func]
     fn same_as(&mut self, other: Gd<WasmGlobal>) -> bool {
         return self.context.dyn_bind().as_context().same_store_as(&other.bind().context.dyn_bind().as_context()) && self.global.debug_index_in_store() == other.bind().global.debug_index_in_store();
