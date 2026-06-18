@@ -59,17 +59,27 @@ impl<T: Element> ErrorToGodot<T> for MyGodotError<T> {
 
 pub(crate) trait IntoMyGodotResult<TRes,TErrRes> {
 	fn or_godot_error(self, err_msg: &str, err_value: TErrRes) -> Result<TRes, MyGodotError<TErrRes>>;
+
+	fn or_godot_error_fn(self, err_msg: &str, err_fn: impl FnOnce() -> TErrRes) -> Result<TRes, MyGodotError<TErrRes>>;
 }
 
 impl<TRes, TErrRes, TErr:std::fmt::Display + 'static> IntoMyGodotResult<TRes,TErrRes> for Result<TRes,TErr> {
 	fn or_godot_error(self, msg: &str, err_value: TErrRes) -> Result<TRes, MyGodotError<TErrRes>> {
 		return self.map_err(|err| MyGodotError { value: err_value, msg: msg.into(), err: Some(Box::new(err)) });
 	}
+
+	fn or_godot_error_fn(self, msg: &str, err_fn: impl FnOnce() -> TErrRes) -> Result<TRes, MyGodotError<TErrRes>> {
+		return self.map_err(|err| MyGodotError { value: err_fn.call_once(()), msg: msg.into(), err: Some(Box::new(err)) });
+	}
 }
 
 impl<TRes,TErrRes> IntoMyGodotResult<TRes,TErrRes> for Option<TRes> {
 	fn or_godot_error(self, msg: &str, err_value: TErrRes) -> Result<TRes, MyGodotError<TErrRes>> {
 		return self.ok_or(MyGodotError { value: err_value, msg: msg.into(), err: None });
+	}
+
+	fn or_godot_error_fn(self, msg: &str, err_fn: impl FnOnce() -> TErrRes) -> Result<TRes, MyGodotError<TErrRes>> {
+		return self.ok_or(MyGodotError { value: err_fn.call_once(()), msg: msg.into(), err: None });
 	}
 }
 
