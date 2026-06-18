@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use godot::classes::GDScript;
-use godot::global::PrintSource;
+use godot::global::{PrintRecord, PrintSource, print_custom};
 use godot::prelude::*;
 use godot::classes::class_macros::private::virtuals::ZipReader::AnyDictionary;
 
@@ -39,6 +39,19 @@ impl GDScriptStuff {
 			}),
 			None => None,
 		};
+	}
+
+	pub fn print_error(msg: &str, rationale: Option<&str>) {
+		let frame_info = Self::get_last_frame_info();
+		let source = frame_info.to_print_source();
+		
+		print_custom(PrintRecord {
+			level: godot::global::PrintLevel::Error,
+			message: msg,
+			rationale: rationale,
+			source,
+			editor_notify: false,
+		});
 	}
 }
 
