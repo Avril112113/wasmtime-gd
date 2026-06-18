@@ -120,12 +120,27 @@ impl WasmMemory {
 		return Ok(true);
 	}
 
-	#[func]
-	fn write(&mut self, offset: i64, bytes: PackedByteArray) -> MyGodotResult<bool> {
+	fn _write(&mut self, offset: i64, bytes: &[u8]) -> MyGodotResult<bool> {
 		let offset = IntoMyGodotResult::or_godot_error(offset.try_into(), &format!("param offset is out of bounds of usize (between 0 - {})", usize::MAX), false).without_err()?;
-		self.memory.write(&mut self.context.dyn_bind_mut().as_context_mut(), offset, bytes.as_slice())
+		self.memory.write(&mut self.context.dyn_bind_mut().as_context_mut(), offset, bytes)
 			.or_godot_error("Failed to write memory", false)?;
 		return Ok(true);
+	}
+
+	#[func]
+	fn write(&mut self, offset: i64, bytes: PackedByteArray) -> MyGodotResult<bool> {
+		return self._write(offset, bytes.as_slice());
+	}
+
+	#[func]
+	fn write_i32(&mut self, offset: i64, value: i32) -> MyGodotResult<bool> {
+		return self._write(offset, &value.to_le_bytes());
+	}
+
+	fn _read(&mut self, offset: i64, bytes: &mut [u8]) -> MyGodotResult<()> {
+		self.memory.read(&mut self.context.dyn_bind_mut().as_context_mut(), offset as usize, bytes)
+			.or_godot_error("Failed to read memory", ())?;
+		return Ok(());
 	}
 	
 	/// Returns array with exactly [param length] bytes, or empty if an error occurred.
@@ -134,9 +149,15 @@ impl WasmMemory {
 		let mut bytes = PackedByteArray::new();
 		let length = IntoMyGodotResult::or_godot_error(length.try_into(), &format!("param length is out of bounds of usize (between 0 - {})", usize::MAX), PackedByteArray::new()).without_err()?;
 		bytes.resize(length);
-		self.memory.read(&mut self.context.dyn_bind_mut().as_context_mut(), offset as usize, bytes.as_mut_slice())
-			.or_godot_error("Failed to read memory", PackedByteArray::new())?;
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(bytes.clone()))?;
 		return Ok(bytes);
+	}
+
+	#[func]
+	fn read_i32(&mut self, offset: i64) -> MyGodotResult<i32> {
+		let mut bytes = vec![0; size_of::<i32>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(i32::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
     #[func]
