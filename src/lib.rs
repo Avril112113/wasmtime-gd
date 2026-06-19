@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![feature(fn_traits)]
+#![feature(int_roundings)]
 
 mod gd_script_stuff;
 
