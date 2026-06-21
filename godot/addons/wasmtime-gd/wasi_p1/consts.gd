@@ -6,29 +6,35 @@ class_name Wasip1Consts
 # Based on https://gist.github.com/cjihrig/d7ca6d4ba541890f6b2eb7719fc0433d
 
 
-# uint8_t __wasi_advice_t
-const ADVICE_DONTNEED = 0
-const ADVICE_NOREUSE = 1
-const ADVICE_NORMAL = 2
-const ADVICE_RANDOM = 3
-const ADVICE_SEQUENTIAL = 4
-const ADVICE_WILLNEED = 5
+## uint8_t __wasi_advice_t
+enum Advice {
+	DONTNEED = 0,
+	NOREUSE = 1,
+	NORMAL = 2,
+	RANDOM = 3,
+	SEQUENTIAL = 4,
+	WILLNEED = 5,
+}
 
 # typedef struct __wasi_ciovec_s {
 #  const void* buf;
 #  size_t buf_len;
 #} __wasi_ciovec_t;
 
-# uint32_t __wasi_clockid_t
-const CLOCK_MONOTONIC = 0
-const CLOCK_PROCESS_CPUTIME_ID = 1
-const CLOCK_REALTIME = 2
-const CLOCK_THREAD_CPUTIME_ID = 3
+## uint32_t __wasi_clockid_t
+enum Clock {
+	MONOTONIC = 0,
+	PROCESS_CPUTIME_ID = 1,
+	REALTIME = 2,
+	THREAD_CPUTIME_ID = 3,
+}
 
 # uint64_t __wasi_device_t
 
-# uint64_t __wasi_dircookie_t
-const DIRCOOKIE_START = 0
+## uint64_t __wasi_dircookie_t
+enum DIRCOOKIE{
+	START = 0,
+}
 
 ## uint16_t __wasi_errno_t [br]
 ## Useful link: [url]https://man7.org/linux/man-pages/man3/errno.3.html[/url]
@@ -112,44 +118,52 @@ enum Errno {
 	ENOTCAPABLE = 76,
 }
 
-# uint16_t __wasi_eventrwflags_t
+## uint16_t __wasi_eventrwflags_t
 const EVENT_FD_READWRITE_HANGUP = 1 << 0
 
-# uint8_t __wasi_eventtype_t
-const EVENTTYPE_CLOCK = 0
-const EVENTTYPE_FD_READ = 1
-const EVENTTYPE_FD_WRITE = 2
+## uint8_t __wasi_eventtype_t
+enum EventType {
+	CLOCK = 0,
+	READ = 1,
+	WRITE = 2,
+}
 
 # uint32_t __wasi_exitcode_t
 
 # uint32_t __wasi_fd_t
 
-# uint16_t __wasi_fdflags_t
-const FDFLAG_APPEND = 1 << 0
-const FDFLAG_DSYNC = 1 << 1
-const FDFLAG_NONBLOCK = 1 << 2
-const FDFLAG_RSYNC = 1 << 3
-const FDFLAG_SYNC = 1 << 4
+## uint16_t __wasi_fdflags_t
+enum FDFlags {
+	APPEND = 1 << 0,
+	DSYNC = 1 << 1,
+	NONBLOCK = 1 << 2,
+	RSYNC = 1 << 3,
+	SYNC = 1 << 4,
+}
 
 # int64_t __wasi_filedelta_t
 
 # uint64_t __wasi_filesize_t
 
-# uint8_t __wasi_filetype_t
-const FILETYPE_UNKNOWN = 0
-const FILETYPE_BLOCK_DEVICE = 1
-const FILETYPE_CHARACTER_DEVICE = 2
-const FILETYPE_DIRECTORY = 3
-const FILETYPE_REGULAR_FILE = 4
-const FILETYPE_SOCKET_DGRAM = 5
-const FILETYPE_SOCKET_STREAM = 6
-const FILETYPE_SYMBOLIC_LINK = 7
+## uint8_t __wasi_filetype_t
+enum FileType {
+	UNKNOWN = 0,
+	BLOCK_DEVICE = 1,
+	CHARACTER_DEVICE = 2,
+	DIRECTORY = 3,
+	REGULAR_FILE = 4,
+	SOCKET_DGRAM = 5,
+	SOCKET_STREAM = 6,
+	SYMBOLIC_LINK = 7,
+}
 
-# uint16_t __wasi_fstflags_t
-const FILESTAT_SET_ATIM = 1 << 0
-const FILESTAT_SET_ATIM_NOW = 1 << 1
-const FILESTAT_SET_MTIM = 1 << 2
-const FILESTAT_SET_MTIM_NOW = 1 << 3
+## uint16_t __wasi_fstflags_t
+enum FileStat {
+	SET_ATIM = 1 << 0,
+	SET_ATIM_NOW = 1 << 1,
+	SET_MTIM = 1 << 2,
+	SET_MTIM_NOW = 1 << 3,
+}
 
 # uint64_t __wasi_inode_t
 
@@ -163,46 +177,52 @@ const FILESTAT_SET_MTIM_NOW = 1 << 3
 # uint32_t __wasi_lookupflags_t
 const LOOKUP_SYMLINK_FOLLOW = 1 << 0
 
-# uint16_t __wasi_oflags_t
-const O_CREAT = 1 << 0
-const O_DIRECTORY = 1 << 1
-const O_EXCL = 1 << 2
-const O_TRUNC = 1 << 3
+## uint16_t __wasi_oflags_t
+enum OFlags {
+	CREAT = 1 << 0,
+	DIRECTORY = 1 << 1,
+	EXCL = 1 << 2,
+	TRUNC = 1 << 3,
+}
 
-# uint16_t __wasi_riflags_t
-const SOCK_RECV_PEEK = 1 << 0
-const SOCK_RECV_WAITALL = 1 << 1
+## uint16_t __wasi_riflags_t
+enum RiFlags {
+	PEEK = 1 << 0,
+	WAITALL = 1 << 1,
+}
 
-# uint64_t __wasi_rights_t
-const RIGHT_FD_DATASYNC = 1 << 0
-const RIGHT_FD_READ = 1 << 1
-const RIGHT_FD_SEEK = 1 << 2
-const RIGHT_FD_FDSTAT_SET_FLAGS = 1 << 3
-const RIGHT_FD_SYNC = 1 << 4
-const RIGHT_FD_TELL = 1 << 5
-const RIGHT_FD_WRITE = 1 << 6
-const RIGHT_FD_ADVISE = 1 << 7
-const RIGHT_FD_ALLOCATE = 1 << 8
-const RIGHT_PATH_CREATE_DIRECTORY = 1 << 9
-const RIGHT_PATH_CREATE_FILE = 1 << 10
-const RIGHT_PATH_LINK_SOURCE = 1 << 11
-const RIGHT_PATH_LINK_TARGET = 1 << 12
-const RIGHT_PATH_OPEN = 1 << 13
-const RIGHT_FD_READDIR = 1 << 14
-const RIGHT_PATH_READLINK = 1 << 15
-const RIGHT_PATH_RENAME_SOURCE = 1 << 16
-const RIGHT_PATH_RENAME_TARGET = 1 << 17
-const RIGHT_PATH_FILESTAT_GET = 1 << 18
-const RIGHT_PATH_FILESTAT_SET_SIZE = 1 << 19
-const RIGHT_PATH_FILESTAT_SET_TIMES = 1 << 20
-const RIGHT_FD_FILESTAT_GET = 1 << 21
-const RIGHT_FD_FILESTAT_SET_SIZE = 1 << 22
-const RIGHT_FD_FILESTAT_SET_TIMES = 1 << 23
-const RIGHT_PATH_SYMLINK = 1 << 24
-const RIGHT_PATH_UNLINK_FILE = 1 << 25
-const RIGHT_PATH_REMOVE_DIRECTORY = 1 << 26
-const RIGHT_POLL_FD_READWRITE = 1 << 27
-const RIGHT_SOCK_SHUTDOWN = 1 << 28
+## uint64_t __wasi_rights_t
+enum Rights {
+	FD_DATASYNC = 1 << 0,
+	FD_READ = 1 << 1,
+	FD_SEEK = 1 << 2,
+	FD_FDSTAT_SET_FLAGS = 1 << 3,
+	FD_SYNC = 1 << 4,
+	FD_TELL = 1 << 5,
+	FD_WRITE = 1 << 6,
+	FD_ADVISE = 1 << 7,
+	FD_ALLOCATE = 1 << 8,
+	PATH_CREATE_DIRECTORY = 1 << 9,
+	PATH_CREATE_FILE = 1 << 10,
+	PATH_LINK_SOURCE = 1 << 11,
+	PATH_LINK_TARGET = 1 << 12,
+	PATH_OPEN = 1 << 13,
+	FD_READDIR = 1 << 14,
+	PATH_READLINK = 1 << 15,
+	PATH_RENAME_SOURCE = 1 << 16,
+	PATH_RENAME_TARGET = 1 << 17,
+	PATH_FILESTAT_GET = 1 << 18,
+	PATH_FILESTAT_SET_SIZE = 1 << 19,
+	PATH_FILESTAT_SET_TIMES = 1 << 20,
+	FD_FILESTAT_GET = 1 << 21,
+	FD_FILESTAT_SET_SIZE = 1 << 22,
+	FD_FILESTAT_SET_TIMES = 1 << 23,
+	PATH_SYMLINK = 1 << 24,
+	PATH_UNLINK_FILE = 1 << 25,
+	PATH_REMOVE_DIRECTORY = 1 << 26,
+	POLL_FD_READWRITE = 1 << 27,
+	SOCK_SHUTDOWN = 1 << 28,
+}
 
 # uint16_t __wasi_roflags_t
 const SOCK_RECV_DATA_TRUNCATED = 1 << 0
@@ -213,36 +233,40 @@ const SHUT_WR = 1 << 1
 
 # uint16_t __wasi_siflags_t
 
-# uint8_t __wasi_signal_t
-const SIGABRT = 0
-const SIGALRM = 1
-const SIGBUS = 2
-const SIGCHLD = 3
-const SIGCONT = 4
-const SIGFPE = 5
-const SIGHUP = 6
-const SIGILL = 7
-const SIGINT = 8
-const SIGKILL = 9
-const SIGPIPE = 10
-const SIGQUIT = 11
-const SIGSEGV = 12
-const SIGSTOP = 13
-const SIGSYS = 14
-const SIGTERM = 15
-const SIGTRAP = 16
-const SIGTSTP = 17
-const SIGTTIN = 18
-const SIGTTOU = 19
-const SIGURG = 20
-const SIGUSR1 = 21
-const SIGUSR2 = 22
-const SIGVTALRM = 23
-const SIGXCPU = 24
-const SIGXFSZ = 25
+## uint8_t __wasi_signal_t
+enum Sig {
+	ABRT = 0,
+	ALRM = 1,
+	BUS = 2,
+	CHLD = 3,
+	CONT = 4,
+	FPE = 5,
+	HUP = 6,
+	ILL = 7,
+	INT = 8,
+	KILL = 9,
+	PIPE = 10,
+	QUIT = 11,
+	SEGV = 12,
+	STOP = 13,
+	SYS = 14,
+	TERM = 15,
+	TRAP = 16,
+	TSTP = 17,
+	TTIN = 18,
+	TTOU = 19,
+	URG = 20,
+	USR1 = 21,
+	USR2 = 22,
+	VTALRM = 23,
+	XCPU = 24,
+	XFSZ = 25,
+}
 
-# uint16_t __wasi_subclockflags_t
-const SUBSCRIPTION_CLOCK_ABSTIME = 1 << 0
+## uint16_t __wasi_subclockflags_t
+enum SubClockFlags {
+	ABSTIME = 1 << 0,
+}
 
 # uint64_t __wasi_timestamp_t
 
@@ -302,7 +326,9 @@ const SUBSCRIPTION_CLOCK_ABSTIME = 1 << 0
   #} u;
 #} __wasi_event_t;
 
-# uint8_t __wasi_whence_t
-const WHENCE_CUR = 0
-const WHENCE_END = 1
-const WHENCE_SET = 2
+## uint8_t __wasi_whence_t
+enum Whence {
+	CUR = 0,
+	END = 1,
+	SET = 2,
+}

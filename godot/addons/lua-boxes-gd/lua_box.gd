@@ -11,12 +11,20 @@ static var _module: WasmModule
 static func __ensure_init(force_reload: bool = false) -> void:
 	if _config == null or force_reload:
 		var start := Time.get_ticks_msec()
+		
 		_config = WasmConfig.new() \
 			.wasm_exceptions(true) \
 			.cranelift_opt_level("Speed") \
 			.wasm_backtrace_details("Disable")
 		_engine = WasmEngine.new_with(_config)
 		_module = WasmModule.new_from_file(_engine, "res://addons/lua-boxes-gd/lua.wasm")
+		
+		#_module = WasmModule.deserialize(_engine, FileAccess.get_file_as_bytes("res://addons/lua-boxes-gd/lua.wasm.compiled"))
+		
+		#var f := FileAccess.open("res://addons/lua-boxes-gd/lua.wasm.compiled", FileAccess.WRITE)
+		#f.store_buffer(_module.serialize())
+		#f.close()
+		
 		var finish := Time.get_ticks_msec()
 		print("__ensure_init() took %sms" % [(finish-start)])
 
@@ -25,13 +33,15 @@ var _store: WasmStore
 var _linker: WasmLinker
 var _instance: WasmInstance
 
-var wasi_clock: Wasip1ClockRealtime
 var wasi_environment: Wasip1Environment
+var wasi_vfs: Wasip1Vfs
+var wasi_clock: Wasip1ClockRealtime:
+	get: return wasi_vfs._clock
 
 var is_setup := false
 
 
-func _init() -> void:
+func _init(vfs: Wasip1Vfs) -> void:
 	__ensure_init()
 	
 	_store = WasmStore.new_with(_engine)
@@ -40,10 +50,10 @@ func _init() -> void:
 	wasi_environment = Wasip1Environment.new()
 	if not _linker.define_feature(_store, wasi_environment.define_feature): return
 	
-	wasi_clock = Wasip1ClockRealtime.new()
-	if not _linker.define_feature(_store, wasi_clock.define_feature): return
+	if not _linker.define_feature(_store, vfs._clock.define_feature): return
 	
-	if not _linker.define_feature(_store, Wasip1TmpStubs.new().define_feature): return
+	wasi_vfs = vfs
+	if not _linker.define_feature(_store, wasi_vfs.define_feature): return
 	
 	_instance = _linker.instantiate(_store, _module)
 	if _instance == null: return
@@ -57,4 +67,4 @@ func main_cli() -> int:
 	var result := _instance.get_func("main_cli").call_wasm([])
 	if result is WasmError:
 		return -99999
-	return result
+	return result[0]

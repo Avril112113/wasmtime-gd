@@ -3,11 +3,14 @@ extends EditorScript
 
 
 func _run() -> void:
-	var box := LuaBox.new()
+	var clock := Wasip1ClockRealtime.new()
+	var vfs := Wasip1Vfs.new(clock)
+	
+	var box := LuaBox.new(vfs)
 	prints(box, box.is_setup)
 	if not box.is_setup:
 		return
-	
+		
 	print("~~~~~")
 	
 	print(box.main_cli())
