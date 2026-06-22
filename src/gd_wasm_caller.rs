@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use wasmtime::{AsContext, AsContextMut};
 
-use crate::{to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext};
+use crate::{to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, wasm_types::gd_wasm_memory::WasmMemory};
 
 
 /// A Wasmtime Extern::Global
@@ -39,8 +39,22 @@ impl WasmCaller {
     #[func(gd_self)]
     fn get_export(gd_self: Gd<Self>, name: GString) -> Variant {
         match gd_self.clone().bind_mut().caller.as_mut().unwrap().get_export(&name.to_string()) {
-            Some(exnter) => exnter.to_variant(gd_self.into_dyn().upcast()),
+            Some(exter) => exter.to_variant(gd_self.into_dyn().upcast()),
             None => Variant::nil(),
+        }
+    }
+
+    /// Get's an exported memory. If the [param name] doesn't exist or isn't a memory, [code]null[/code] is returned.
+    #[func(gd_self)]
+    fn get_memory(gd_self: Gd<Self>, #[opt(default="memory")] name: GString) -> Option<Gd<WasmMemory>> {
+        match gd_self.clone().bind_mut().caller.as_mut().unwrap().get_export(&name.to_string()) {
+            Some(exter) => {
+                match exter {
+                    wasmtime::Extern::Memory(memory) => Some(WasmMemory::new_from(memory, gd_self.into_dyn().upcast())),
+                    _ => None,
+                }
+            },
+            None => None,
         }
     }
 }
