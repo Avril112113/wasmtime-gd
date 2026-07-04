@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use wasmtime::{AsContext, AsContextMut};
 
-use crate::{gd_wasm_engine::WasmEngine, store_same_as::ContextStoreSameAs, utils::GdAsContext};
+use crate::{gd_wasm_engine::WasmEngine, store_same_as::ContextStoreSameAs, utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}};
 
 /// A Wasmtime Linker, to link wasm modules/instances together and provide imports from the host.
 /// 
@@ -36,6 +36,21 @@ impl WasmStore {
 	#[func]
 	pub fn same_as(&self, other: DynGd<RefCounted, dyn GdAsContext>) -> bool {
 		return self.as_context().same_store_as(&other.dyn_bind().as_context());
+	}
+
+	#[func]
+	pub fn get_fuel(&self) -> i64 {
+		return self.store.get_fuel()
+			.or_print_error("Failed to get fuel")
+			.map(|v| v as i64)
+			.unwrap_or(-1);
+	}
+
+	#[func]
+	pub fn set_fuel(&mut self, fuel: i64) -> MyGodotResult<bool> {
+		return self.store.set_fuel(fuel as u64)
+			.map(|()| true)
+			.or_godot_error("Failed to get fuel", false);
 	}
 }
 
