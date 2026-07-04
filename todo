@@ -1,25 +1,22 @@
 Implement the following for fully sync and main thread execution;
-- [ ] args_get
-- [ ] args_sizes_get
-- [ ] environ_get
-- [ ] environ_sizes_get
-- [ ] clock_time_get
-- [ ] fd_close
-- [ ] fd_fdstat_get
+- [x] args_get
+- [x] args_sizes_get
+- [x] environ_get
+- [x] environ_sizes_get
+- [x] clock_time_get
+- [x] fd_close
+- [x] fd_fdstat_get
 - [ ] fd_fdstat_set_flags
-- [ ] fd_prestat_get
+- [x] fd_prestat_get
 - [ ] fd_prestat_dir_name
-- [ ] fd_read
+- [x] fd_read
 - [ ] fd_renumber
 - [ ] fd_seek
-- [ ] fd_write
-- [ ] path_open
+- [x] fd_write
+- [x] path_open
 - [ ] path_remove_directory
 - [ ] path_rename
 - [ ] path_unlink_file  // Not actually used?
-- [ ] proc_exit
+- [x] proc_exit
 
 Create a helper for WASM memory malloc, which frees upon drop. (As I did for C#)
-
-See if I can store the `store` with the module exports, and make it so I don't have to pass it into every call.
-I doubt this will be easy or nice to use?

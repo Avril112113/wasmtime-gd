@@ -15,7 +15,8 @@ static func __ensure_init(force_reload: bool = false) -> void:
 		_config = WasmConfig.new() \
 			.wasm_exceptions(true) \
 			.cranelift_opt_level("Speed") \
-			.wasm_backtrace_details("Disable")
+			.wasm_backtrace_details("Disable") \
+			.consume_fuel(true)
 		_engine = WasmEngine.new_with(_config)
 		_module = WasmModule.new_from_file(_engine, "res://addons/lua-boxes-gd/lua.wasm")
 		
@@ -45,6 +46,7 @@ func _init(vfs: Wasip1Vfs) -> void:
 	__ensure_init()
 	
 	_store = WasmStore.new_with(_engine)
+	_store.set_fuel(9_223_372_036_854_775_807)
 	_linker = WasmLinker.new_with(_engine)
 	
 	wasi_environment = Wasip1Environment.new()

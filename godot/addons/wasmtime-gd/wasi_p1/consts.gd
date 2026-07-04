@@ -332,3 +332,18 @@ enum Whence {
 	END = 1,
 	SET = 2,
 }
+
+#typedef struct __wasi_prestat_dir_t {
+  #/**
+   #* The length of the directory name for use with `fd_prestat_dir_name`.
+   #*/
+  #__wasi_size_t pr_name_len;
+#
+#} __wasi_prestat_dir_t;
+#typedef union __wasi_prestat_u_t {
+  #__wasi_prestat_dir_t dir;
+#} __wasi_prestat_u_t;
+#typedef struct __wasi_prestat_t {
+  #uint8_t tag;
+  #__wasi_prestat_u_t u;
+#} __wasi_prestat_t;

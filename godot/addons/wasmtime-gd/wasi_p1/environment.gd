@@ -66,7 +66,7 @@ var _wasm_args_get = [
 	func _wasm_args_get(caller: WasmCaller, argv: int, argv_buf: int) -> int:
 		var memory: WasmMemory = caller.get_export("memory")
 		for i in range(len(arguments)):
-			var offset = _raw_arguments_offsets[0]
+			var offset = _raw_arguments_offsets[i]
 			memory.write_i32(argv + i*4, argv_buf + offset)
 		memory.write(argv_buf, _raw_arguments)
 		return Wasip1Consts.Errno.ESUCCESS
@@ -90,7 +90,7 @@ var _wasm_environ_get = [
 	func _wasm_environ_get(caller: WasmCaller, argv: int, argv_buf: int) -> int:
 		var memory: WasmMemory = caller.get_export("memory")
 		for i in range(len(environ)):
-			var offset = _raw_environ_offsets[0]
+			var offset = _raw_environ_offsets[i]
 			memory.write_i32(argv + i*4, argv_buf + offset)
 		memory.write(argv_buf, _raw_environ)
 		return Wasip1Consts.Errno.ESUCCESS

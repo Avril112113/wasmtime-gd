@@ -514,11 +514,18 @@ static func get_native_class_name(thing):
 		if(gdscript_native_class_names_by_type.has(thing)):
 			to_return = gdscript_native_class_names_by_type[thing]
 		else:
-			var newone = thing.new()
-			to_return = newone.get_class()
-			if(!newone is RefCounted):
-				newone.free()
-			gdscript_native_class_names_by_type[thing] = to_return
+			if thing == WasmInstance:
+				gdscript_native_class_names_by_type[thing] = "WasmInstance"
+			elif thing == WasmFunc:
+				gdscript_native_class_names_by_type[thing] = "WasmFunc"
+			elif thing == WasmGlobal:
+				gdscript_native_class_names_by_type[thing] = "WasmGlobal"
+			else:
+				var newone = thing.new()
+				to_return = newone.get_class()
+				if(!newone is RefCounted):
+					newone.free()
+				gdscript_native_class_names_by_type[thing] = to_return
 	return to_return
 
 

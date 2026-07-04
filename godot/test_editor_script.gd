@@ -1,19 +1,57 @@
 @tool
 extends EditorScript
 
+# TODO:
+# - Add other restrictions
+# - Handle relative paths in path_open.
+
 
 func _run() -> void:
+	print("~~~~~ SETUP")
+	
 	var clock := Wasip1ClockRealtime.new()
 	var vfs := Wasip1Vfs.new(clock)
+	
+	var slash_dev := Wasip1VfsVirtualDirectory.new(vfs)
+	vfs.vroot.add_child("dev", slash_dev)
+	slash_dev.add_child("stdin", Wasip1VfsStreamFile.new(vfs).with_write("print('Hello World!')".to_utf8_buffer()))
+	slash_dev.add_child("stdout", Wasip1VfsStreamFile.new(vfs))
+	slash_dev.add_child("stderr", Wasip1VfsStreamFile.new(vfs))
+	# Pre-opens
+	assert(vfs.open_fd("/dev/stdin", 0) is Wasip1VfsFileDescriptor)
+	assert(vfs.open_fd("/dev/stdout", 1) is Wasip1VfsFileDescriptor)
+	assert(vfs.open_fd("/dev/stderr", 2) is Wasip1VfsFileDescriptor)
+	assert(vfs.open_fd("/", 3) is Wasip1VfsFileDescriptor)
+	
+	vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello Godot! (from test.lua)', require('foo'))".to_utf8_buffer()))
+	vfs.vroot.add_child("foo.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello O_o (from foo.lua)')".to_utf8_buffer()))
+	
+	print("~~~~~ TEST IN")
+	
+	prints("/dev/stdin", vfs.get_entry("/dev/stdin"))
+	prints("/dev/stdout", vfs.get_entry("/dev/stdout"))
+	prints("/dev/stderr", vfs.get_entry("/dev/stderr"))
 	
 	var box := LuaBox.new(vfs)
 	prints(box, box.is_setup)
 	if not box.is_setup:
 		return
-		
-	print("~~~~~")
 	
+	box._store.set_fuel(1_000_000)
+	
+	print("~~~~~ main_cli()")
+	
+	box.wasi_environment.arguments = ["lua", "test.lua"]
 	print(box.main_cli())
+	
+	print("~~~~~ TEST OUT")
+	
+	var stdout: Wasip1VfsStreamFile = vfs.get_entry("/dev/stdout")
+	var stderr: Wasip1VfsStreamFile = vfs.get_entry("/dev/stderr")
+	prints("/dev/stdout", stdout.get_filesize())
+	print(stdout.read_all()[1].get_string_from_utf8())
+	prints("/dev/stderr", stderr.get_filesize())
+	print(stderr.read_all()[1].get_string_from_utf8())
 	
 	print("~~~~~")
 	
