@@ -80,7 +80,15 @@ impl WasmFunc {
 
 		let func = wasmtime::Func::new(
 			&mut context.dyn_bind_mut().as_context_mut(), func_type.clone(),
-			move |caller, params, results| {
+			move |mut caller, params, results| {
+				let fuel_call_use = caller.data().call_fuel_use;
+				match caller.get_fuel() {
+					Ok(fuel) => {
+						caller.set_fuel(fuel + fuel_call_use).unwrap();
+					},
+					Err(_err) => {},
+				};
+				
 				let mut varags: Vec<Variant> = params.iter().map(|v| v.to_variant()).collect();
 				
 				let gd_caller;

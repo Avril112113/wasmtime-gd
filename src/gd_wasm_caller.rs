@@ -1,7 +1,10 @@
 use godot::prelude::*;
 use wasmtime::{AsContext, AsContextMut};
 
-use crate::{to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, wasm_types::gd_wasm_memory::WasmMemory};
+use crate::{
+    store_data::StoreData, to_from_variant::to_from_godot::ToFromVariantContext, wasm_types::gd_wasm_memory::WasmMemory,
+    utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}
+};
 
 
 /// A Wasmtime Extern::Global
@@ -12,7 +15,7 @@ use crate::{to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsCon
 #[derive(GodotClass)]
 #[class(base=RefCounted)]
 pub struct WasmCaller {
-	caller: Option<wasmtime::Caller<'static, ()>>,
+	caller: Option<wasmtime::Caller<'static, StoreData>>,
 }
 
 #[godot_api]
@@ -24,7 +27,7 @@ impl IRefCounted for WasmCaller {
 
 #[godot_api]
 impl WasmCaller {
-    pub fn new_from(caller: wasmtime::Caller<'static, ()>) -> Gd<Self> {
+    pub fn new_from(caller: wasmtime::Caller<'static, StoreData>) -> Gd<Self> {
         return Gd::from_object(Self {
             caller:Some(caller)
         })
@@ -57,15 +60,30 @@ impl WasmCaller {
             None => None,
         }
     }
+
+	#[func]
+	pub fn get_fuel(&self) -> i64 {
+		return self.caller.as_ref().unwrap().get_fuel()
+			.or_print_error("Failed to get fuel")
+			.map(|v| v as i64)
+			.unwrap_or(-1);
+	}
+
+	#[func]
+	pub fn set_fuel(&mut self, fuel: i64) -> MyGodotResult<bool> {
+		return self.caller.as_mut().unwrap().set_fuel(fuel as u64)
+			.map(|()| true)
+			.or_godot_error("Failed to set fuel", false);
+	}
 }
 
 #[godot_dyn]
 impl GdAsContext for WasmCaller {
-	fn as_context(&self) -> wasmtime::StoreContext<'_, ()> {
+	fn as_context(&self) -> wasmtime::StoreContext<'_, StoreData> {
 		return self.caller.as_ref().unwrap().as_context();
 	}
 
-	fn as_context_mut(&mut self) -> wasmtime::StoreContextMut<'_, ()> {
+	fn as_context_mut(&mut self) -> wasmtime::StoreContextMut<'_, StoreData> {
 		return self.caller.as_mut().unwrap().as_context_mut();
 	}
 }

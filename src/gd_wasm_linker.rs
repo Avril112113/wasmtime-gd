@@ -1,7 +1,10 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_engine::WasmEngine, gd_wasm_instance::WasmInstance, gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, utils_errors::*};
-use crate::wasm_types::WasmAsExtern;
+use crate::store_data::StoreData;
+use crate::{
+    gd_wasm_engine::WasmEngine, gd_wasm_instance::WasmInstance, gd_wasm_module::WasmModule, gd_wasm_store::WasmStore,
+    utils_errors::*, wasm_types::WasmAsExtern
+};
 
 
 /// A Wasmtime Linker, to link wasm modules/instances together and provide imports from the host.
@@ -10,7 +13,7 @@ use crate::wasm_types::WasmAsExtern;
 #[derive(GodotClass)]
 #[class(base=RefCounted)]
 pub struct WasmLinker {
-	pub linker: wasmtime::Linker<()>,
+	pub linker: wasmtime::Linker<StoreData>,
 }
 
 #[godot_api]
