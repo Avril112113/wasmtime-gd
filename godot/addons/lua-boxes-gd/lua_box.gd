@@ -34,6 +34,8 @@ var _store: WasmStore
 var _linker: WasmLinker
 var _instance: WasmInstance
 
+var _exports: LuaWasmExports
+
 var wasi_environment: Wasip1Environment
 var wasi_vfs: Wasip1Vfs
 var wasi_clock: Wasip1ClockRealtime:
@@ -60,6 +62,8 @@ func _init(vfs: Wasip1Vfs) -> void:
 	_instance = _linker.instantiate(_store, _module)
 	if _instance == null: return
 	
+	_exports = LuaWasmExports.new(_instance)
+	
 	if _instance.get_func("_initialize").call_wasm([]) is WasmError: return
 	
 	is_setup = true
@@ -70,3 +74,13 @@ func main_cli() -> int:
 	if result is WasmError:
 		return -99999
 	return result[0]
+
+## May return [WasmError] instead in the case of a wasm error.
+func new_state() -> LuaState:
+	var state_ptr := self._exports.luaL_newstate()
+	if state_ptr is Array and len(state_ptr) == 1 and state_ptr[0] is int:
+		return LuaState.new(self, state_ptr[0])
+	elif state_ptr is WasmError:
+		return state_ptr
+	printerr("luaL_newstate() returned unexpect value %s" % [state_ptr])
+	return null

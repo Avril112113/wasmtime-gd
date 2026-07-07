@@ -38,10 +38,15 @@ func _run() -> void:
 	
 	box._store.fuel = 1_000_000
 	
-	print("~~~~~ main_cli()")
+	#print("~~~~~ main_cli()")
+	#
+	#box.wasi_environment.arguments = ["lua", "test.lua"]
+	#print(box.main_cli())
 	
-	box.wasi_environment.arguments = ["lua", "test.lua"]
-	print(box.main_cli())
+	print("~~~~~ new state")
+	
+	var state := box.new_state()
+	print(state)
 	
 	print("~~~~~ TEST OUT")
 	
