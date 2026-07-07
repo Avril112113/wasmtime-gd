@@ -3,7 +3,6 @@ extends EditorScript
 
 # TODO:
 # - Add other restrictions
-# - Handle relative paths in path_open.
 
 
 func _run() -> void:
@@ -37,7 +36,7 @@ func _run() -> void:
 	if not box.is_setup:
 		return
 	
-	box._store.set_fuel(1_000_000)
+	box._store.fuel = 1_000_000
 	
 	print("~~~~~ main_cli()")
 	

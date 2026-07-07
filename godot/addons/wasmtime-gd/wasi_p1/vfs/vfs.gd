@@ -123,8 +123,8 @@ var _wasm_fd_close = [
 	["i32"],
 	func _wasm_fd_close(caller: WasmCaller, fd):
 		if fd in self._file_descriptors:
-			var filedescriptor := self._file_descriptors[fd]
-			var errno := filedescriptor.handle.fd_close()
+			var descriptor := self._file_descriptors[fd]
+			var errno := descriptor.handle.fd_close()
 			self._file_descriptors.erase(fd)
 			return errno
 		return Wasip1Consts.Errno.EBADF
@@ -148,8 +148,8 @@ var _wasm_fd_fdstat_get = [
 		var memory := caller.get_memory()
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
-		var handle := self._file_descriptors[fd]
-		handle._wasm_write_memory_filestat(buf_ptr, memory)
+		var descriptor := self._file_descriptors[fd]
+		descriptor._wasm_write_memory_filestat(buf_ptr, memory)
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -176,13 +176,13 @@ var _wasm_fd_filestat_get = [
 	func _wasm_fd_filestat_get(caller: WasmCaller, fd, buf):
 		if fd not in self._file_descriptors:
 			return Wasip1Consts.Errno.EBADF
-		var handle := self._file_descriptors[fd]
+		var descriptor := self._file_descriptors[fd]
 		
 		var memory := caller.get_memory()
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		handle.entry._wasm_write_memory_filestat(buf, memory)
+		descriptor.handle.entry._wasm_write_memory_filestat(buf, memory)
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -217,13 +217,13 @@ var _wasm_fd_prestat_get = [
 	func _wasm_fd_prestat_get(caller: WasmCaller, fd, buf):
 		if fd not in self._file_descriptors:
 			return Wasip1Consts.Errno.EBADF
-		var handle := self._file_descriptors[fd]
+		var descriptor := self._file_descriptors[fd]
 		
 		var memory := caller.get_memory()
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		handle._wasm_write_memory_prestat(buf, memory)
+		descriptor._wasm_write_memory_prestat(buf, memory)
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -234,13 +234,13 @@ var _wasm_fd_prestat_dir_name = [
 	func _wasm_fd_prestat_dir_name(caller: WasmCaller, fd, path, path_len):
 		if fd not in self._file_descriptors:
 			return Wasip1Consts.Errno.EBADF
-		var handle := self._file_descriptors[fd]
+		var descriptor := self._file_descriptors[fd]
 		
 		var memory := caller.get_memory()
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		handle._wasm_write_memory_prestat_dir_name(path, path_len, memory)
+		descriptor._wasm_write_memory_prestat_dir_name(path, path_len, memory)
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -259,7 +259,7 @@ var _wasm_fd_read = [
 	func _wasm_fd_read(caller: WasmCaller, fd, iovs, iovs_len, nread):
 		if fd not in self._file_descriptors:
 			return Wasip1Consts.Errno.EBADF
-		var handle := self._file_descriptors[fd]
+		var descriptor := self._file_descriptors[fd]
 		
 		var memory := caller.get_memory()
 		if memory == null:
@@ -267,7 +267,7 @@ var _wasm_fd_read = [
 		
 		var total_bytes := WasmUtils.read_iovs_total_buf_len(memory, iovs, iovs_len)
 		var bytes := PackedByteArray()
-		var errno := handle.handle.fd_read(bytes, total_bytes)
+		var errno := descriptor.handle.fd_read(bytes, total_bytes)
 		if errno != Wasip1Consts.Errno.ESUCCESS:
 			memory.write_u32(nread, 0)
 			return errno
@@ -323,7 +323,7 @@ var _wasm_fd_write = [
 	func _wasm_fd_write(caller: WasmCaller, fd, iovs, iovs_len, nwritten):
 		if fd not in self._file_descriptors:
 			return Wasip1Consts.Errno.EBADF
-		var handle := self._file_descriptors[fd]
+		var descriptor := self._file_descriptors[fd]
 		
 		var memory := caller.get_memory()
 		if memory == null:
@@ -331,7 +331,7 @@ var _wasm_fd_write = [
 		
 		var bytes := WasmUtils.read_iovs(memory, iovs, iovs_len)
 		var bytes_count := len(bytes)
-		var errno := handle.handle.fd_write(bytes)
+		var errno := descriptor.handle.fd_write(bytes)
 		memory.write_u32(nwritten, bytes_count - len(bytes))
 		return errno
 ]
@@ -375,16 +375,16 @@ var _wasm_path_open = [
 	func _wasm_path_open(caller: WasmCaller, dirfd: int, dirflags: int, path_ptr: int, path_len: int, o_flags: Wasip1Consts.OFlags, fs_rights_base: Wasip1Consts.Rights, fs_rights_inheriting: Wasip1Consts.Rights, fs_flags: int, fd_ptr: int):
 		if dirfd not in self._file_descriptors:
 			return Wasip1Consts.Errno.EBADF
-		var dir_fd := self._file_descriptors[dirfd]
-		if dir_fd.handle.entry.get_filetype() != Wasip1Consts.FileType.DIRECTORY or dir_fd.handle.entry is not Wasip1VfsDirectoryBase:
+		var dir_descriptor := self._file_descriptors[dirfd]
+		if dir_descriptor.handle.entry.get_filetype() != Wasip1Consts.FileType.DIRECTORY or dir_descriptor.handle.entry is not Wasip1VfsDirectoryBase:
 			return Wasip1Consts.Errno.ENOTDIR
-		var dir_entry := dir_fd.handle.entry as Wasip1VfsDirectoryBase
+		var dir_entry := dir_descriptor.handle.entry as Wasip1VfsDirectoryBase
 		
 		var memory := caller.get_memory()
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		var path := memory.read(path_ptr, path_len).get_string_from_utf8()
+		var path := memory.read(path_ptr, path_len).get_string_from_utf8().simplify_path()
 		var entry := dir_entry.get_child(path)
 		if entry is Wasip1VfsEntryBase:
 			var entry_file_type: Wasip1Consts.FileType = entry.get_filetype()

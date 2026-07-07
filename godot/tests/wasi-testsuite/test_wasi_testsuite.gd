@@ -18,6 +18,7 @@ var wasi_testsuite_cases:
 		]
 
 func test_wasi_testsuite(params = use_parameters(wasi_testsuite_cases)):
+	prints("~~~", params)
 	var path: String = params[0]
 	var wasm_path := path + ".wasm"
 	var json_path := path.trim_suffix("_async") + ".json"
@@ -39,6 +40,7 @@ func test_wasi_testsuite(params = use_parameters(wasi_testsuite_cases)):
 	linker.define_feature(store, wasi_clock.define_feature)
 	
 	var wasi_vfs := Wasip1Vfs.new(wasi_clock)
+	linker.define_feature(store, wasi_vfs.define_feature)
 	var slash_dev := Wasip1VfsVirtualDirectory.new(wasi_vfs)
 	wasi_vfs.vroot.add_child("dev", slash_dev)
 	slash_dev.add_child("stdin", Wasip1VfsStreamFile.new(wasi_vfs))
@@ -47,7 +49,7 @@ func test_wasi_testsuite(params = use_parameters(wasi_testsuite_cases)):
 	assert_is(wasi_vfs.open_fd("/dev/stdin", 0), Wasip1VfsFileDescriptor)
 	assert_is(wasi_vfs.open_fd("/dev/stdout", 1), Wasip1VfsFileDescriptor)
 	assert_is(wasi_vfs.open_fd("/dev/stderr", 2), Wasip1VfsFileDescriptor)
-	linker.define_feature(store, wasi_vfs.define_feature)
+	assert_is(wasi_vfs.open_fd("/", 3), Wasip1VfsFileDescriptor)
 	
 	if spec != null:
 		for field in spec.keys():
@@ -71,11 +73,12 @@ func test_wasi_testsuite(params = use_parameters(wasi_testsuite_cases)):
 	assert_eq(result, null)
 	if result is WasmError:
 		result.print()
-		return
 	
-	print("stdout:")
-	var stdout_str: Variant = wasi_vfs.get_entry("/dev/stdout").read_all()[1].get_string_from_utf8()
-	print(stdout_str)
-	print("stderr:")
-	var stderr_str: Variant = wasi_vfs.get_entry("/dev/stderr").read_all()[1].get_string_from_utf8()
-	print(stderr_str)
+	var stdout_str: String = wasi_vfs.get_entry("/dev/stdout").read_all()[1].get_string_from_utf8()
+	if len(stdout_str) > 0:
+		print("stdout:")
+		print(stdout_str)
+	var stderr_str: String = wasi_vfs.get_entry("/dev/stderr").read_all()[1].get_string_from_utf8()
+	if len(stderr_str) > 0:
+		print("stderr:")
+		print(stderr_str)

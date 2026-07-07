@@ -46,7 +46,7 @@ func _init(vfs: Wasip1Vfs) -> void:
 	__ensure_init()
 	
 	_store = WasmStore.new_with(_engine)
-	_store.set_fuel(9_223_372_036_854_775_807)
+	_store.fuel = 9_223_372_036_854_775_807
 	_linker = WasmLinker.new_with(_engine)
 	
 	wasi_environment = Wasip1Environment.new()

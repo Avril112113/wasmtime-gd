@@ -27,14 +27,16 @@ func get_child(path: String) -> Variant:
 	var child_path = self._real_path.path_join(path).simplify_path()
 	if not (child_path.begins_with(self._real_path) and child_path.substr(len(self._real_path), 1) == "/"):
 		return Wasip1Consts.Errno.ENOENT
-	if DirAccess.dir_exists_absolute(path):
-		if path in self._children:
-			return self._children[child_path].get_ref()
+	if child_path in self._children:
+		return self._children[child_path].get_ref()
+	if DirAccess.dir_exists_absolute(child_path):
 		var child := Wasip1VfsMappedDirectory.new(self.vfs, child_path, self._children)
-		self._children[path] = weakref(child)
+		self._children[child_path] = weakref(child)
 		return child
-	elif FileAccess.file_exists(path):
-		return Wasip1Consts.Errno.ENOSYS
+	elif FileAccess.file_exists(child_path):
+		var child := Wasip1VfsMappedFile.new(self.vfs, child_path)
+		self._children[child_path] = weakref(child)
+		return child
 	return Wasip1Consts.Errno.ENOENT
 
 func open() -> FdHandle:

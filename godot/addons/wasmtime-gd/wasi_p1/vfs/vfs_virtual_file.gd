@@ -65,7 +65,7 @@ class FdHandle:
 				self._pos = clampi(offset, 0, len(self._entry.bytes))
 				return [Wasip1Consts.Errno.ESUCCESS, self._pos]
 			Wasip1Consts.Whence.END:
-				self._pos = clampi(len(self._entry.bytes) - offset, 0, len(self._entry.bytes))
+				self._pos = clampi(len(self._entry.bytes) + offset, 0, len(self._entry.bytes))
 				return [Wasip1Consts.Errno.ESUCCESS, self._pos]
 		return [Wasip1Consts.Errno.EINVAL, self._pos]
 
