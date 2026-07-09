@@ -10,12 +10,12 @@ static func _define_func_name(feature, linker: WasmLinker, store: WasmStore, nam
 	var info = feature["_wasm_" + name]
 	var arg_types = info[0]
 	var result_types = info[1]
-	#var callable = info[2]
-	var callable = func(...args):
-		var result: Variant = info[2].callv(args)
-		args.pop_front()
-		print(name, args, " = ", result)
-		return result
+	var callable = info[2]
+	#var callable = func(...args):
+		#var result: Variant = info[2].callv(args)
+		#args.pop_front()
+		#print(name, args, " = ", result)
+		#return result
 	return linker.define(store, module_name, name, WasmFunc.from_callable(store, arg_types, result_types, callable))
 
 ## [param feature] should have a const [code]MODULE_NAME[/code]

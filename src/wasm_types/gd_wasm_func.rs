@@ -93,6 +93,7 @@ impl WasmFunc {
 				
 				let gd_caller;
 				unsafe {
+					// transmute to 'static
 					gd_caller = WasmCaller::new_from(std::mem::transmute(caller));
 				}
 				let _guard = scopeguard::guard((), |_| {

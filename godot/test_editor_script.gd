@@ -25,6 +25,16 @@ func _run() -> void:
 	vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello Godot! (from test.lua)', require('foo'))".to_utf8_buffer()))
 	vfs.vroot.add_child("foo.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello O_o (from foo.lua)')".to_utf8_buffer()))
 	
+	# Native lua.exe; 0.24s
+	# LuaBoxes debug: 0.36s
+	# LuaBoxes release: 0.36s
+	#var entry_lua := "start = os.clock(); f = 1; for i=1,10000000 do f = f * f end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
+	# Native lua.exe; 0.043s
+	# LuaBoxes debug: 0.274s
+	# LuaBoxes release: 0.018s
+	#var entry_lua := "start = os.clock(); for i=1,1200 do print(\"Hi!\") end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
+	#vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write(entry_lua))
+	
 	print("~~~~~ TEST IN")
 	
 	prints("/dev/stdin", vfs.get_entry("/dev/stdin"))
@@ -36,17 +46,20 @@ func _run() -> void:
 	if not box.is_setup:
 		return
 	
-	box._store.fuel = 1_000_000
+	box._store.fuel = 100_000_000_000
 	
-	#print("~~~~~ main_cli()")
+	print("~~~~~ main_cli()")
+	
+	box.wasi_environment.arguments = ["lua", "test.lua"]
+	var start := Time.get_unix_time_from_system()
+	print(box.main_cli())
+	var finish := Time.get_unix_time_from_system()
+	print("Took %ss" % (finish - start))
+	
+	#print("~~~~~ new state")
 	#
-	#box.wasi_environment.arguments = ["lua", "test.lua"]
-	#print(box.main_cli())
-	
-	print("~~~~~ new state")
-	
-	var state := box.new_state()
-	print(state)
+	#var state := box.new_state()
+	#print(state)
 	
 	print("~~~~~ TEST OUT")
 	

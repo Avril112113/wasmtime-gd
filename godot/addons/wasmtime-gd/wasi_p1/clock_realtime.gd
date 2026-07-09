@@ -13,7 +13,7 @@ var now_nsec: int:
 
 var now_monotonic_process_nsec: int:
 	get:
-		return Time.get_ticks_usec() - epoch_ticks
+		return (Time.get_ticks_usec() - epoch_ticks) * 1_000
 
 
 ## Make sure to keep a reference to this RefCounted object!
@@ -22,7 +22,7 @@ var now_monotonic_process_nsec: int:
 func _init() -> void:
 	pass
 
-func unix_timestamp_to_clock_timestamp(unix_timestamp) -> int:
+func unix_timestamp_to_clock_timestamp(unix_timestamp: float) -> int:
 	return floor(unix_timestamp * 1_000_000_000)
 
 
@@ -39,11 +39,11 @@ var _wasm_clock_res_get = [
 	func _wasm_args_get(caller: WasmCaller, clock_id: int, precision: int) -> int:
 		var memory: WasmMemory = caller.get_export("memory")
 		if clock_id == Wasip1Consts.Clock.REALTIME:
-			# get_unix_time_from_system is msec
-			memory.write_u64(precision, 1000)
+			# get_unix_time_from_system is micro-sec accuracy
+			memory.write_u64(precision, 1_000)
 		elif clock_id == Wasip1Consts.Clock.MONOTONIC or clock_id == Wasip1Consts.Clock.PROCESS_CPUTIME_ID or clock_id == Wasip1Consts.Clock.THREAD_CPUTIME_ID:
-			# get_ticks_usec is msec
-			memory.write_u64(precision, 1000)
+			# get_ticks_usec is micro-sec accuracy
+			memory.write_u64(precision, 1_000)
 		else:
 			return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS

@@ -6,7 +6,7 @@ pub(crate) struct StoreData {
 impl StoreData {
 	pub(crate) fn new() -> Self {
 		Self {
-			call_fuel_use: 1000,
+			call_fuel_use: 10000,
 		}
 	}
 }
