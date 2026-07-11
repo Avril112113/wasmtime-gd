@@ -22,8 +22,8 @@ func _run() -> void:
 	assert(vfs.open_fd("/dev/stderr", 2) is Wasip1VfsFileDescriptor)
 	assert(vfs.open_fd("/", 3) is Wasip1VfsFileDescriptor)
 	
-	vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello Godot! (from test.lua)', require('foo'))".to_utf8_buffer()))
-	vfs.vroot.add_child("foo.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello O_o (from foo.lua)')".to_utf8_buffer()))
+	#vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello Godot! (from test.lua)', require('foo'))".to_utf8_buffer()))
+	#vfs.vroot.add_child("foo.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello O_o (from foo.lua)')".to_utf8_buffer()))
 	
 	# Native lua.exe; 0.24s
 	# LuaBoxes debug: 0.36s
@@ -32,8 +32,8 @@ func _run() -> void:
 	# Native lua.exe; 0.043s
 	# LuaBoxes debug: 0.274s
 	# LuaBoxes release: 0.018s
-	#var entry_lua := "start = os.clock(); for i=1,1200 do print(\"Hi!\") end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
-	#vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write(entry_lua))
+	var entry_lua := "start = os.clock(); for i=1,1200 do print(\"Hi!\") end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
+	vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write(entry_lua))
 	
 	print("~~~~~ TEST IN")
 	
@@ -46,7 +46,8 @@ func _run() -> void:
 	if not box.is_setup:
 		return
 	
-	box._store.fuel = 100_000_000_000
+	box._store.fuel = 10_000_000_000
+	var starting_fuel := box._store.fuel
 	
 	print("~~~~~ main_cli()")
 	
@@ -54,7 +55,7 @@ func _run() -> void:
 	var start := Time.get_unix_time_from_system()
 	print(box.main_cli())
 	var finish := Time.get_unix_time_from_system()
-	print("Took %ss" % (finish - start))
+	print("Took %ss and %s fuel" % [finish - start, starting_fuel - box._store.fuel])
 	
 	#print("~~~~~ new state")
 	#
@@ -66,9 +67,11 @@ func _run() -> void:
 	var stdout: Wasip1VfsStreamFile = vfs.get_entry("/dev/stdout")
 	var stderr: Wasip1VfsStreamFile = vfs.get_entry("/dev/stderr")
 	prints("/dev/stdout", stdout.get_filesize())
-	print(stdout.read_all()[1].get_string_from_utf8())
+	if stdout.get_filesize() > 0:
+		print(stdout.read_all()[1].get_string_from_utf8())
 	prints("/dev/stderr", stderr.get_filesize())
-	print(stderr.read_all()[1].get_string_from_utf8())
+	if stderr.get_filesize() > 0:
+		print(stderr.read_all()[1].get_string_from_utf8())
 	
 	print("~~~~~")
 	

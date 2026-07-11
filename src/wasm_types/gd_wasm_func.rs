@@ -46,9 +46,10 @@ impl WasmFunc {
 	}
 
 	/// Creates a new [WasmFunc] from a godot [Callable] [br]
+	/// If [param fuel_cost] [code]>= 0[/code], this much fuel will be consumed when called, otherwise the default from [property WasmStore.host_call_fuel_use] [br]
 	/// Ensure the callable stays valid! See this issue: https://github.com/godotengine/godot/issues/74990
 	#[func]
-	fn from_callable(mut context: DynGd<RefCounted, dyn GdAsContext>, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable) -> MyGodotResult<Option<Gd<Self>>> {
+	fn from_callable(mut context: DynGd<RefCounted, dyn GdAsContext>, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable, #[opt(default=-1)] fuel_cost: i64) -> MyGodotResult<Option<Gd<Self>>> {
 		let gd_context: DynGd<RefCounted, _> = context.clone();
 		
 		let callable = fragile::Fragile::new(callable);
@@ -81,10 +82,10 @@ impl WasmFunc {
 		let func = wasmtime::Func::new(
 			&mut context.dyn_bind_mut().as_context_mut(), func_type.clone(),
 			move |mut caller, params, results| {
-				let fuel_call_use = caller.data().call_fuel_use;
+				let fuel_call_use = if fuel_cost >= 0 { fuel_cost as u64 } else { caller.data().call_fuel_use };
 				match caller.get_fuel() {
 					Ok(fuel) => {
-						caller.set_fuel(fuel + fuel_call_use).unwrap();
+						caller.set_fuel(fuel - fuel_call_use).unwrap();
 					},
 					Err(_err) => {},
 				};
