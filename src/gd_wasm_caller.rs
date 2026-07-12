@@ -1,9 +1,8 @@
-use godot::prelude::*;
+use godot::{classes::class_macros::sys::is_editor, prelude::*};
 use wasmtime::{AsContext, AsContextMut};
 
 use crate::{
-    store_data::StoreData, to_from_variant::to_from_godot::ToFromVariantContext, wasm_types::gd_wasm_memory::WasmMemory,
-    utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}
+    gd_script_stuff::GDScriptStuff, store_data::StoreData, to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}, wasm_types::gd_wasm_memory::WasmMemory
 };
 
 
@@ -16,12 +15,18 @@ use crate::{
 #[class(base=RefCounted)]
 pub struct WasmCaller {
 	caller: Option<wasmtime::Caller<'static, StoreData>>,
+
+	#[var(get = get_fuel, set = _set_fuel)]
+	fuel: PhantomVar<i64>,
 }
 
 #[godot_api]
 impl IRefCounted for WasmCaller {
     fn init(_base: Base<Self::Base>) -> Self {
-        panic!("WasmCaller.new() is invalid!");
+        if !is_editor() {
+            GDScriptStuff::print_error("WasmCaller.new() is invalid!", None);
+        }
+        return Self { caller: None, fuel: Default::default() }
     }
 }
 
@@ -29,7 +34,8 @@ impl IRefCounted for WasmCaller {
 impl WasmCaller {
     pub fn new_from(caller: wasmtime::Caller<'static, StoreData>) -> Gd<Self> {
         return Gd::from_object(Self {
-            caller:Some(caller)
+            caller: Some(caller),
+            fuel: Default::default(),
         })
     }
 
@@ -67,6 +73,14 @@ impl WasmCaller {
 			.or_print_error("Failed to get fuel")
 			.map(|v| v as i64)
 			.unwrap_or(-1);
+	}
+
+	#[func]
+	#[doc(hidden)]
+	pub fn _set_fuel(&mut self, fuel: i64) {
+		// Result is ignored
+		self.caller.as_mut().unwrap().set_fuel(fuel as u64)
+			.or_print_error("Failed to set fuel");
 	}
 
 	#[func]
