@@ -19,7 +19,7 @@ wasmparser = "0.263.0"
 
 [profile.dev]
 lto = "off"
-debug = "none"
+debug = "full"
 opt-level = 0
 
 [profile.dev.package."*"]

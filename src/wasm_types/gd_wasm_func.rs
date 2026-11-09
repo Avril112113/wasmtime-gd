@@ -90,25 +90,22 @@ impl WasmFunc {
 					Err(_err) => {},
 				};
 
-				let gd_caller;
-				unsafe {
-					// transmute to 'static
-					gd_caller = WasmCaller::new_from(std::mem::transmute(caller));
-				}
+				// transmute to 'static
+				let gd_caller = unsafe { WasmCaller::new_from(std::mem::transmute(caller)) };
 				let _guard = scopeguard::guard((), |_| {
 					gd_caller.clone().bind_mut().invalidate();
 				});
 				
-				let mut varags: Vec<Variant> = params.iter().map(|v| v.to_variant(gd_caller.clone().into_dyn().upcast())).collect();
-				varags.insert(0, gd_caller.to_variant());
+				let mut varargs: Vec<Variant> = params.iter().map(|v| v.to_variant(gd_caller.clone().into_dyn().upcast())).collect();
+				varargs.insert(0, gd_caller.to_variant());
 				
 				let callable = callable.get();
 				if !callable.is_valid() {
-					// Adding the `callable` to the msg does provide additional info, like it's name it if has one.
+					// Adding the `callable` to the msg does provide additional info, like it's name if it has one.
 					return Err(wasmtime::Error::msg(format!("Callable is invalid! ({})", callable)));
 				}
 				// let result = callable.clone().0.call(&varags);
-				let result = callable.call(&varags);
+				let result = callable.call(&varargs);
 
 				if let Ok(mut err) = result.try_to::<Gd<WasmError>>() {
 					let error = err.bind_mut().error.take()
