@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory}};
+use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory, gd_wasm_table::WasmTable}};
 
 /// An instantiated Wasmtime Module.
 /// 
@@ -56,6 +56,16 @@ impl WasmInstance {
         let gd_store = self.store.clone();
         return match self.instance.get_memory(&mut self.store.bind_mut().store, &name.to_string()) {
             Some(memory) => Some(WasmMemory::new_from(memory, gd_store.into_dyn().upcast())),
+            None => None,
+        };
+    }
+
+    /// Get an exported [WasmTable] value by name.
+    #[func]
+    fn get_table(&mut self, name: GString) -> Option<Gd<WasmTable>> {
+        let gd_store = self.store.clone();
+        return match self.instance.get_table(&mut self.store.bind_mut().store, &name.to_string()) {
+            Some(table) => Some(WasmTable::new_from(table, gd_store.into_dyn().upcast())),
             None => None,
         };
     }

@@ -15,7 +15,7 @@ func _initialize() -> Variant:
 	return self.___initialize.call_wasm_catch([])
 
 # ["table", ["ref_type", true, "func"], false, 202]
-# ???
+var __indirect_function_table: WasmTable
 
 # ["tag_type", ["func_type", ["i32"], []]]
 # ???
@@ -1152,7 +1152,7 @@ func _init(instance: WasmInstance):
 	self.___initialize = instance.get_func("_initialize")
 	
 	# ["table", ["ref_type", true, "func"], false, 202]
-	# ???
+	self.__indirect_function_table = instance.get_table("__indirect_function_table")
 	
 	# ["tag_type", ["func_type", ["i32"], []]]
 	# ???

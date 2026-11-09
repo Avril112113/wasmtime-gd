@@ -29,6 +29,9 @@ func _run() -> void:
 			"memory":
 				lines_defs.push_back("var %s: WasmMemory" % [gd_name])
 				lines_init.push_back("\tself.%s = instance.get_memory(\"%s\")" % [gd_name, gd_name])
+			"table":
+				lines_defs.push_back("var %s: WasmTable" % [gd_name])
+				lines_init.push_back("\tself.%s = instance.get_table(\"%s\")" % [gd_name, gd_name])
 			"func_type":
 				var args := LuaBox._dwarf.get_func_param_names(name)
 				

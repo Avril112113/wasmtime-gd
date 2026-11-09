@@ -25,14 +25,20 @@ func _run() -> void:
 	#vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello Godot! (from test.lua)', require('foo'))".to_utf8_buffer()))
 	#vfs.vroot.add_child("foo.lua", Wasip1VfsVirtualFile.new(vfs).with_write("print('Hello O_o (from foo.lua)')".to_utf8_buffer()))
 	
+	# Pure compute speed test; (Reference being Native lua.exe)
 	# Native lua.exe; 0.24s
 	# LuaBoxes debug: 0.36s
 	# LuaBoxes release: 0.36s
 	#var entry_lua := "start = os.clock(); f = 1; for i=1,10000000 do f = f * f end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
+	
+	# Lua <-> Godot boundry speed test; (Reference being Native lua.exe)
 	# Native lua.exe; 0.043s
 	# LuaBoxes debug: 0.274s
 	# LuaBoxes release: 0.018s
-	var entry_lua := "start = os.clock(); for i=1,1200 do print(\"Hi!\") end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
+	#var entry_lua := "start = os.clock(); for i=1,1200 do print(\"Hi!\") end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
+	
+	var entry_lua := "print('Hi <3')".to_utf8_buffer()
+	
 	vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write(entry_lua))
 	
 	print("~~~~~ TEST IN")
@@ -74,6 +80,15 @@ func _run() -> void:
 		print(stderr.read_all()[1].get_string_from_utf8())
 	
 	print("~~~~~")
+	
+	#var state_ptr: Variant = box._exports.get_global_state()[0]
+	print(box._exports.__indirect_function_table.get_table_type())
+	print(box._exports.__indirect_function_table.get_element_type())
+	print(box._exports.__indirect_function_table.minimum())
+	print(box._exports.__indirect_function_table.maximum())
+	print(box._exports.__indirect_function_table.is_64())
+	print(box._exports.__indirect_function_table.get(0))
+	print(box._exports.__indirect_function_table.get(1))
 	
 	#var config := WasmConfig.new()
 	#var engine := WasmEngine.new_with(config)
