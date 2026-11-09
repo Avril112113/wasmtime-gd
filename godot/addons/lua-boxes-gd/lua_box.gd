@@ -5,6 +5,7 @@ class_name LuaBox
 static var _config: WasmConfig = null
 static var _engine: WasmEngine
 static var _module: WasmModule
+static var _dwarf: WasmDwarf = null
 
 
 ## This pattern is used to ensure these are set even if LuaBoxes is used in the editor.
@@ -13,12 +14,15 @@ static func __ensure_init(force_reload: bool = false) -> void:
 		var start := Time.get_ticks_msec()
 		
 		_config = WasmConfig.new() \
+			.debug_info(true) \
 			.wasm_exceptions(true) \
 			.cranelift_opt_level("Speed") \
 			.wasm_backtrace_details("Disable") \
 			.consume_fuel(true)
 		_engine = WasmEngine.new_with(_config)
 		_module = WasmModule.new_from_file(_engine, "res://addons/lua-boxes-gd/lua.wasm")
+		
+		_dwarf = WasmDwarf.new_from(FileAccess.get_file_as_bytes("res://addons/lua-boxes-gd/lua.wasm"))
 		
 		#_module = WasmModule.deserialize(_engine, FileAccess.get_file_as_bytes("res://addons/lua-boxes-gd/lua.wasm.compiled"))
 		
