@@ -86,7 +86,7 @@ impl WasmTable {
 	}
 
 	/// Returns the table element value at [param]index[/param]. [br]
-	/// Returns [null] if [param]index[/param] is out of bounds.
+	/// Returns [code]null[/code] if [param]index[/param] is out of bounds.
 	#[func]
 	pub fn get(&mut self, index: i64) -> MyGodotResult<Variant> {
 		if index < 0 {

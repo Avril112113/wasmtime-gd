@@ -38,7 +38,7 @@ pub struct WasmError {
 	pub error: Option<wasmtime::Error>,
 
 	/// The value which was given to [member new_from]. [br]
-	/// If the error wasn't created with [member new_from], this will be [null].
+	/// If the error wasn't created with [member new_from], this will be [code]null[/code].
 	#[var(get=get_data, no_set)]
 	prop_data: PhantomVar<Variant>,
 }
@@ -80,7 +80,7 @@ impl WasmError {
 	}
 
 	/// The value which was given to [member new_from]. [br]
-	/// If the error wasn't created with [member new_from], this will be [null].
+	/// If the error wasn't created with [member new_from], this will be [code]null[/code].
 	#[func]
 	fn get_data(&self) -> Variant {
 		if let Some(Some(error)) = self.error.as_ref().map(|error| error.downcast_ref::<WasmGodotError>()) {

@@ -44,7 +44,7 @@ impl WasmCaller {
     }
 
     /// Get's an export from the caller's instance. [br]
-    /// If an export with the [param name] doesn't exit, [null] is returned.
+    /// If an export with the [param name] doesn't exit, [code]null[/code] is returned.
     #[func(gd_self)]
     fn get_export(gd_self: Gd<Self>, name: GString) -> Variant {
         match gd_self.clone().bind_mut().caller.as_mut().unwrap().get_export(&name.to_string()) {
