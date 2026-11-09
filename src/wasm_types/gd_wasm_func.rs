@@ -164,7 +164,7 @@ impl WasmFunc {
 		let mut dyn_context_mut = self.context.dyn_bind_mut();
 		let mut context_mut = &mut dyn_context_mut.as_context_mut();
 		
-		let func_type = self.func.ty(&mut context_mut);
+		let func_type = self.func.ty(&context_mut);
 		let param_types = func_type.params();
 
 		if args.len() != param_types.len() {
@@ -174,7 +174,8 @@ impl WasmFunc {
 		let params = param_types.enumerate().map(|(i, ty)| -> Result<wasmtime::Val, MyGodotError<Variant>> {
 			return ty.val_from(args.at(i), &mut context_mut).or_godot_error(&format!("Invalid arg type arg #{}, expected {}", i, ty), Variant::nil());
 		}).collect::<Result<Vec<wasmtime::Val>, MyGodotError<Variant>>>()?;
-		let mut results = self.func.ty(&mut context_mut).results().map(|ty| {
+		
+		let mut results = self.func.ty(&context_mut).results().map(|ty| {
 			if let Some(val) = ty.default_value() {
 				return val;
 			}
@@ -183,6 +184,10 @@ impl WasmFunc {
 				_ => unreachable!(),
 			};
 		}).collect::<Vec<wasmtime::Val>>();
+
+		// TODO: We have bound to self.context, which is an issue...
+		//       The following call may call back into a WasmFunc we provided, meaning it get's binded to another time.
+		//       This violates Rust's borrow checker, it's just pushed to the runtime due to Godot stuff.
 
 		return Ok(self.func.call(&mut context_mut, params.as_slice(), results.as_mut_slice()).map(|()| results));
 	}

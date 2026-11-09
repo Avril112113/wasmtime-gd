@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory, gd_wasm_table::WasmTable}};
+use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, utils::GdAsContext, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory, gd_wasm_table::WasmTable}};
 
 /// An instantiated Wasmtime Module.
 /// 
@@ -34,7 +34,7 @@ impl WasmInstance {
     #[func]
     fn get_global(&mut self, name: GString) -> Option<Gd<WasmGlobal>> {
         let gd_store = self.store.clone();
-        return match self.instance.get_global(&mut self.store.bind_mut().store, &name.to_string()) {
+        return match self.instance.get_global(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
             Some(global) => Some(WasmGlobal::new_from(global, gd_store.into_dyn().upcast())),
             None => None,
         };
@@ -44,7 +44,7 @@ impl WasmInstance {
     #[func]
     fn get_func(&mut self, name: GString) -> Option<Gd<WasmFunc>> {
         let gd_store = self.store.clone();
-        return match self.instance.get_func(&mut self.store.bind_mut().store, &name.to_string()) {
+        return match self.instance.get_func(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
             Some(func) => Some(WasmFunc::new_from(func, gd_store.into_dyn().upcast())),
             None => None,
         };
@@ -54,7 +54,7 @@ impl WasmInstance {
     #[func]
     fn get_memory(&mut self, name: GString) -> Option<Gd<WasmMemory>> {
         let gd_store = self.store.clone();
-        return match self.instance.get_memory(&mut self.store.bind_mut().store, &name.to_string()) {
+        return match self.instance.get_memory(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
             Some(memory) => Some(WasmMemory::new_from(memory, gd_store.into_dyn().upcast())),
             None => None,
         };
@@ -64,7 +64,7 @@ impl WasmInstance {
     #[func]
     fn get_table(&mut self, name: GString) -> Option<Gd<WasmTable>> {
         let gd_store = self.store.clone();
-        return match self.instance.get_table(&mut self.store.bind_mut().store, &name.to_string()) {
+        return match self.instance.get_table(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
             Some(table) => Some(WasmTable::new_from(table, gd_store.into_dyn().upcast())),
             None => None,
         };
@@ -73,9 +73,7 @@ impl WasmInstance {
     /// Gets the [WasmModule] which this instance was instantiated from.
     #[func]
     fn get_module(&mut self) -> Gd<WasmModule> {
-        let store = &mut self.store.bind_mut().store;
-        let module = self.instance.module(store);
         // `.clone()` is actually just for an Arc<>, so it's cheap.
-        return WasmModule::from_module(module.clone());
+        return WasmModule::from_module(self.instance.module(&mut self.store.bind_mut().as_context_mut()).clone());
     }
 }
