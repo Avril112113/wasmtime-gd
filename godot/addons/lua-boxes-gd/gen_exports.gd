@@ -28,10 +28,10 @@ func _run() -> void:
 		match wasm_type[0]:
 			"memory":
 				lines_defs.push_back("var %s: WasmMemory" % [gd_name])
-				lines_init.push_back("\tself.%s = instance.get_memory(\"%s\")" % [gd_name, gd_name])
+				lines_init.push_back("\tself.%s = instance.get_memory(\"%s\")" % [gd_name, name])
 			"table":
 				lines_defs.push_back("var %s: WasmTable" % [gd_name])
-				lines_init.push_back("\tself.%s = instance.get_table(\"%s\")" % [gd_name, gd_name])
+				lines_init.push_back("\tself.%s = instance.get_table(\"%s\")" % [gd_name, name])
 			"func_type":
 				var args := LuaBox._dwarf.get_func_param_names(name)
 				
@@ -64,11 +64,11 @@ func _run() -> void:
 						args.push_back("_arg%s" % [i])
 					params.push_back("%s: %s" % [args[i], godot_type])
 				lines_defs.push_back("var __%s: WasmFunc" % [gd_name])
-				lines_defs.push_back("## Returns either an [Array] of results (typically 1 value) or [WasmError].")
+				lines_defs.push_back("## Returns either; an [Array] of results (typically 1 value); or [code]null[/code] if it doesn't return anything; or [WasmError]. [br]")
 				lines_defs.push_back("## For details, see [method WasmFunc.call_wasm_catch]")
 				lines_defs.push_back("func %s(%s) -> Variant:" % [gd_name, ", ".join(params)])
 				lines_defs.push_back("\treturn self.__%s.call_wasm_catch([%s])" % [gd_name, ", ".join(args)])
-				lines_init.push_back("\tself.__%s = instance.get_func(\"%s\")" % [gd_name, gd_name])
+				lines_init.push_back("\tself.__%s = instance.get_func(\"%s\")" % [gd_name, name])
 			_:
 				lines_defs.push_back("# ???")
 				lines_init.push_back("\t# ???")

@@ -37,7 +37,7 @@ func _run() -> void:
 	# LuaBoxes release: 0.018s
 	#var entry_lua := "start = os.clock(); for i=1,1200 do print(\"Hi!\") end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
 	
-	var entry_lua := "print('Hi <3')".to_utf8_buffer()
+	var entry_lua := "print('my_gd_fn', my_gd_fn); print('my_gd_fn()', my_gd_fn())".to_utf8_buffer()
 	
 	vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write(entry_lua))
 	
@@ -54,6 +54,24 @@ func _run() -> void:
 	
 	box._store.fuel = 10_000_000_000
 	var starting_fuel := box._store.fuel
+	
+	print("~~~~~ my_gd_fn")
+	
+	var global_state_ptr: int = box._exports.get_global_state()[0]
+	
+	var my_gd_fn_ptr := box._get_or_add_indirect_function(
+		func(_caller: WasmCaller, lua_state_ptr: int):
+			box._exports.lua_pushinteger(lua_state_ptr, 112233)
+			return 1
+	)
+	box._exports.lua_pushcclosure(global_state_ptr, my_gd_fn_ptr, 0)
+	
+	var global_name := "my_gd_fn".to_utf8_buffer()
+	global_name.append(0)
+	var global_name_ptr: int = box._exports._malloc(len(global_name))[0]
+	box._exports.memory.write(global_name_ptr, global_name)
+	box._exports.lua_setglobal(global_state_ptr, global_name_ptr)
+	box._exports._free(global_name_ptr)
 	
 	print("~~~~~ main_cli()")
 	
@@ -80,15 +98,6 @@ func _run() -> void:
 		print(stderr.read_all()[1].get_string_from_utf8())
 	
 	print("~~~~~")
-	
-	#var state_ptr: Variant = box._exports.get_global_state()[0]
-	print(box._exports.__indirect_function_table.get_table_type())
-	print(box._exports.__indirect_function_table.get_element_type())
-	print(box._exports.__indirect_function_table.minimum())
-	print(box._exports.__indirect_function_table.maximum())
-	print(box._exports.__indirect_function_table.is_64())
-	print(box._exports.__indirect_function_table.get(0))
-	print(box._exports.__indirect_function_table.get(1))
 	
 	#var config := WasmConfig.new()
 	#var engine := WasmEngine.new_with(config)

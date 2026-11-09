@@ -2,6 +2,13 @@ extends RefCounted
 class_name LuaBox
 
 
+# LUA_REGISTRYINDEX	(-(INT_MAX/2 + 1000))
+const RegistryIndex := -(2147483647/2 + 1000);
+
+const RIdxGlobals := 2;
+const RIdxMainThread := 3;
+
+
 static var _config: WasmConfig = null
 static var _engine: WasmEngine
 static var _module: WasmModule
@@ -39,6 +46,8 @@ var _linker: WasmLinker
 var _instance: WasmInstance
 
 var _exports: LuaWasmExports
+
+var _function_table_indicies: Dictionary[Callable, int] = {}
 
 var wasi_environment: Wasip1Environment
 var wasi_vfs: Wasip1Vfs
@@ -88,3 +97,12 @@ func new_state() -> LuaState:
 		return state_ptr
 	printerr("luaL_newstate() returned unexpect value %s" % [state_ptr])
 	return null
+
+func _get_or_add_indirect_function(callable: Callable) -> int:
+	if callable in _function_table_indicies:
+		return _function_table_indicies[callable]
+	
+	var idx := _exports.__indirect_function_table.size()
+	_exports.__indirect_function_table.grow(1, WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], callable))
+	_function_table_indicies[callable] = idx
+	return idx
