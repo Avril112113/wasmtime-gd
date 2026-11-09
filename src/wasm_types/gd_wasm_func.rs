@@ -38,7 +38,7 @@ impl IRefCounted for WasmFunc {
 #[godot_api]
 impl WasmFunc {
 	pub fn new_from(func: wasmtime::Func, context: DynGd<RefCounted, dyn GdAsContext>) -> Gd<Self> {
-		// Callee may expect `context` to not be binded to during this call.
+		// Callee may expect `context` to not be bound to during this call.
 		return Gd::from_object(WasmFunc {
 			func,
 			context,
@@ -89,9 +89,7 @@ impl WasmFunc {
 					},
 					Err(_err) => {},
 				};
-				
-				let mut varags: Vec<Variant> = params.iter().map(|v| v.to_variant()).collect();
-				
+
 				let gd_caller;
 				unsafe {
 					// transmute to 'static
@@ -100,6 +98,8 @@ impl WasmFunc {
 				let _guard = scopeguard::guard((), |_| {
 					gd_caller.clone().bind_mut().invalidate();
 				});
+				
+				let mut varags: Vec<Variant> = params.iter().map(|v| v.to_variant(gd_caller.clone().into_dyn().upcast())).collect();
 				varags.insert(0, gd_caller.to_variant());
 				
 				let callable = callable.get();
@@ -194,7 +194,7 @@ impl WasmFunc {
 		return match self.call_wasm_internal(args)? {
 			Ok(results) => match results.len() {
 				0 => Ok(Variant::nil()),
-				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant())).to_variant())
+				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
 			},
 			Err(error) => Ok(WasmError::new_from_error(error).to_variant()),
 		};
@@ -208,7 +208,7 @@ impl WasmFunc {
 		return match self.call_wasm_internal(args)? {
 			Ok(results) => match results.len() {
 				0 => Ok(Variant::nil()),
-				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant())).to_variant())
+				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
 			},
 			Err(error) => {
 				let gd_error = WasmError::new_from_error(error);

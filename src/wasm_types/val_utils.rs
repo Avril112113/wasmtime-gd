@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use wasmtime::{AsContextMut, Extern, ExternRef, HeapType, RefType, Val, ValType};
 
-use crate::{to_from_variant::to_from_godot::ToFromVariantContext, wasm_types::gd_wasm_func::WasmFunc};
+use crate::{to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, wasm_types::gd_wasm_func::WasmFunc};
 
 
 pub trait ValFromVariantByValType {
@@ -32,41 +32,44 @@ impl ValFromVariantByValType for RefType {
 				=> Val::ExternRef(Some(ExternRef::new(context, Extern::from_variant(&variant)?).expect("TODO: Handle wasmtime::Error"))),
 			HeapType::Func | HeapType::ConcreteFunc(_) | HeapType::NoFunc
 				=> Val::FuncRef(Some(variant.try_to::<Gd<WasmFunc>>()?.bind().func)),
-			HeapType::Any => todo!(),
-			HeapType::Eq => todo!(),
-			HeapType::I31 => todo!(),
-			HeapType::Array => todo!(),
-			HeapType::ConcreteArray(_array_type) => todo!(),
-			HeapType::Struct => todo!(),
-			HeapType::ConcreteStruct(_struct_type) => todo!(),
-			HeapType::Exn => todo!(),
-			HeapType::ConcreteExn(_exn_type) => todo!(),
-			HeapType::ConcreteCont(_cont_type) => todo!(),
-			HeapType::Cont => todo!(),
-			HeapType::NoCont => todo!(),
-			HeapType::None => todo!(),
-			HeapType::NoExn => todo!(),
+			HeapType::Any => todo!("Any"),
+			HeapType::Eq => todo!("Eq"),
+			HeapType::I31 => todo!("I31"),
+			HeapType::Array => todo!("Array"),
+			HeapType::ConcreteArray(_array_type) => todo!("ConcreteArray"),
+			HeapType::Struct => todo!("Struct"),
+			HeapType::ConcreteStruct(_struct_type) => todo!("ConcreteStruct"),
+			HeapType::Exn => todo!("Exn"),
+			HeapType::ConcreteExn(_exn_type) => todo!("ConcreteExn"),
+			HeapType::ConcreteCont(_cont_type) => todo!("ConcreteCont"),
+			HeapType::Cont => todo!("Cont"),
+			HeapType::NoCont => todo!("NoCont"),
+			HeapType::None => todo!("None"),
+			HeapType::NoExn => todo!("NoExn"),
 		});
 	}
 }
 
 pub trait ValToVariant {
-	fn to_variant(&self) -> Variant;
+	fn to_variant(&self, context: DynGd<RefCounted, dyn GdAsContext>) -> Variant;
 }
 
 impl ValToVariant for Val {
-	fn to_variant(&self) -> Variant {
+	fn to_variant(&self, context: DynGd<RefCounted, dyn GdAsContext>) -> Variant {
 		match self {
 			Val::I32(value) => Variant::from(*value),
 			Val::I64(value) => Variant::from(*value),
 			Val::F32(value) => Variant::from(f32::from_bits(*value)),
 			Val::F64(value) => Variant::from(f64::from_bits(*value)),
-			Val::V128(_v128) => todo!(),
-			Val::FuncRef(_func) => todo!(),
-			Val::ExternRef(_rooted) => todo!(),
-			Val::AnyRef(_rooted) => todo!(),
-			Val::ExnRef(_rooted) => todo!(),
-			Val::ContRef(_cont_ref) => todo!(),
+			Val::V128(_v128) => todo!("V128"),
+			Val::FuncRef(func) => match func {
+				Some(func) => { WasmFunc::new_from(func.to_owned(), context).to_variant() },
+				None => { Variant::nil() }
+			},
+			Val::ExternRef(_rooted) => todo!("ExternRef"),
+			Val::AnyRef(_rooted) => todo!("AnyRef"),
+			Val::ExnRef(_rooted) => todo!("ExnRef"),
+			Val::ContRef(_cont_ref) => todo!("ContRef"),
 		}
 	}
 }
