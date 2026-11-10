@@ -96,7 +96,7 @@ impl WasmGlobal {
 
     /// Get's the value of the Global.
     #[func]
-    fn get(&mut self) -> Variant {
+    fn get_value(&mut self) -> Variant {
         match self.global.get(&mut self.context.clone().dyn_bind_mut().as_context_mut()) {
             I32(value) => Variant::from(value),
             I64(value) => Variant::from(value),
@@ -121,7 +121,7 @@ impl WasmGlobal {
     /// Set the value of this global, make sure to check [param is_mutable] [br]
     /// Returns `false` when invalid value is set, along with a logged error.
     #[func]
-    fn set(&mut self, value: Variant) -> MyGodotResult<bool> {
+    fn set_value(&mut self, value: Variant) -> MyGodotResult<bool> {
         let global_type = self.global.ty(&self.context.dyn_bind().as_context());
         let val = global_type.content().val_from(value, &mut self.context.dyn_bind_mut().as_context_mut())
             .or_godot_error("Failed to convert Variant:", false)?;
