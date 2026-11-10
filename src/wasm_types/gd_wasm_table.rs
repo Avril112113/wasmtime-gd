@@ -45,6 +45,8 @@ impl WasmTable {
 		})
 	}
 
+	// TODO: A way for Godot to create these.
+
 	/// Returns the underlying type of this table, including its element type as well as the maximum/minimum lower bounds.
 	#[func]
 	pub fn get_table_type(&self) -> Variant {

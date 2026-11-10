@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, utils::GdAsContext, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory, gd_wasm_table::WasmTable}};
+use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, utils::GdAsContext, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory, gd_wasm_table::WasmTable, gd_wasm_tag::WasmTag}};
 
 /// An instantiated Wasmtime Module.
 /// 
@@ -28,6 +28,13 @@ impl WasmInstance {
             instance,
             store,
         };
+    }
+
+    /// Gets the [WasmModule] which this instance was instantiated from.
+    #[func]
+    fn get_module(&mut self) -> Gd<WasmModule> {
+        // `.clone()` is actually just for an Arc<>, so it's cheap.
+        return WasmModule::from_module(self.instance.module(&mut self.store.bind_mut().as_context_mut()).clone());
     }
 
     /// Get an exported [WasmGlobal] value by name.
@@ -70,10 +77,13 @@ impl WasmInstance {
         };
     }
 
-    /// Gets the [WasmModule] which this instance was instantiated from.
+    /// Get an exported [WasmTag] value by name.
     #[func]
-    fn get_module(&mut self) -> Gd<WasmModule> {
-        // `.clone()` is actually just for an Arc<>, so it's cheap.
-        return WasmModule::from_module(self.instance.module(&mut self.store.bind_mut().as_context_mut()).clone());
+    fn get_tag(&mut self, name: GString) -> Option<Gd<WasmTag>> {
+        let gd_store = self.store.clone();
+        return match self.instance.get_tag(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
+            Some(tag) => Some(WasmTag::new_from(tag, gd_store.into_dyn().upcast())),
+            None => None,
+        };
     }
 }

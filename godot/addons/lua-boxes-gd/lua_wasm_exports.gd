@@ -21,7 +21,7 @@ class_name LuaWasmExports
 var memory: WasmMemory
 
 # ["global_type", "var", "i32"]
-# ???
+var __stack_pointer: WasmGlobal
 
 # ["func_type", [], []]
 var ___initialize: WasmFunc
@@ -34,7 +34,7 @@ func _initialize() -> Variant:
 var __indirect_function_table: WasmTable
 
 # ["tag_type", ["func_type", ["i32"], []]]
-# ???
+var __c_longjmp: WasmTag
 
 # ["func_type", [], ["i32"]]
 var __luaL_newstate: WasmFunc
@@ -2024,7 +2024,7 @@ func _init(instance: WasmInstance):
 	self.memory = instance.get_memory("memory")
 	
 	# ["global_type", "var", "i32"]
-	# ???
+	self.__stack_pointer = instance.get_global("__stack_pointer")
 	
 	# ["func_type", [], []]
 	self.___initialize = instance.get_func("_initialize")
@@ -2033,7 +2033,7 @@ func _init(instance: WasmInstance):
 	self.__indirect_function_table = instance.get_table("__indirect_function_table")
 	
 	# ["tag_type", ["func_type", ["i32"], []]]
-	# ???
+	self.__c_longjmp = instance.get_tag("__c_longjmp")
 	
 	# ["func_type", [], ["i32"]]
 	self.__luaL_newstate = instance.get_func("luaL_newstate")

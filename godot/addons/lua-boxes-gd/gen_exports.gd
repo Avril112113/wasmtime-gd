@@ -189,9 +189,16 @@ func _run() -> void:
 			"memory":
 				lines_defs.push_back("var %s: WasmMemory" % [gd_name])
 				lines_init.push_back("\tself.%s = instance.get_memory(\"%s\")" % [gd_name, name])
+			"global_type":
+				lines_defs.push_back("var %s: WasmGlobal" % [gd_name])
+				lines_init.push_back("\tself.%s = instance.get_global(\"%s\")" % [gd_name, name])
 			"table":
 				lines_defs.push_back("var %s: WasmTable" % [gd_name])
 				lines_init.push_back("\tself.%s = instance.get_table(\"%s\")" % [gd_name, name])
+			"tag_type":
+				#lines_defs.push_back("const %s: Variant = %s" % [gd_name, wasm_type])
+				lines_defs.push_back("var %s: WasmTag" % [gd_name])
+				lines_init.push_back("\tself.%s = instance.get_tag(\"%s\")" % [gd_name, name])
 			"func_type":
 				var args := LuaBox._dwarf.get_func_param_names(name)
 				
