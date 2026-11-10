@@ -58,14 +58,14 @@ impl WasmTag {
 		)));
 	}
 
-	/// Returns the underlying type of this table, including its element type as well as the maximum/minimum lower bounds.
+	/// Returns the underlying type of this tag, including its element type as well as the maximum/minimum lower bounds.
 	#[func]
 	pub fn get_tag_type(&self) -> Variant {
 		return self.tag.ty(&mut self.context.dyn_bind().as_context()).to_variant();
 	}
 
-	/// Check if 2 [WasmTag]s are actually the same table.
-	/// Note that, many separate [WasmTag] objects can refer to the same table!
+	/// Check if 2 [WasmTag]s are actually the same tag.
+	/// Note that, many separate [WasmTag] objects can refer to the same tag!
     #[func]
     fn same_as(&mut self, other: Gd<WasmTag>) -> bool {
         return self.context.dyn_bind().as_context().same_store_as(&other.bind().context.dyn_bind().as_context()) && self.tag.debug_index_in_store() == other.bind().tag.debug_index_in_store();
