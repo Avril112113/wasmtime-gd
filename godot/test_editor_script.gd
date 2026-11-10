@@ -61,7 +61,10 @@ func _run() -> void:
 	
 	var my_gd_fn_ptr := box._get_or_add_indirect_function(
 		func(_caller: WasmCaller, lua_state_ptr: int):
-			box._exports.lua_pushinteger(lua_state_ptr, 112233)
+			var t := Thread.new()
+			t.start(func(): return box._exports.lua_pushinteger(lua_state_ptr, 112233))
+			print("Thread result: ", t.wait_to_finish())
+			#box._exports.lua_pushinteger(lua_state_ptr, 112233)
 			return 1
 	)
 	box._exports.lua_pushcclosure(global_state_ptr, my_gd_fn_ptr, 0)

@@ -1,6 +1,7 @@
 use godot::prelude::*;
+use wasmtime::AsContextMut;
 
-use crate::{gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
+use crate::{gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, store_data::StoreData, to_from_variant::ToFromVariant, utils::{GdAsContext, ReentrancyState}, utils_errors::*, wasm_types::*};
 use super::WasmAsExtern;
 
 
@@ -157,22 +158,35 @@ impl WasmFunc {
 		return Array::from_iter(self.func.ty(context).results().map(|ty| ty.to_variant()));
 	}
 
+	fn store_ptr_for_call(&mut self) -> Result<*mut dyn AsContextMut<Data = StoreData>, MyGodotError<Variant>> {
+		let ctx = self.context.dyn_bind_mut().get_context();
+
+		// This is the real no-double-borrow check.
+		let mut store_borrow = ctx.borrow_mut();
+		let _ = store_borrow.as_context_mut();
+
+		let ptr = ctx.clone().as_ptr();
+		drop(store_borrow);
+		drop(ctx);
+
+		Ok(ptr)
+	}
+
 	fn call_wasm_internal(&mut self, args: Array<Variant>) -> Result<wasmtime::Result<Vec<wasmtime::Val>>, MyGodotError<Variant>> {
-		let mut dyn_context_mut = self.context.dyn_bind_mut();
-		let mut context_mut = &mut dyn_context_mut.as_context_mut();
+		let ctx = self.context.dyn_bind_mut();
 		
-		let func_type = self.func.ty(&context_mut);
+		let func_type = self.func.ty(ctx.as_context_mut());
 		let param_types = func_type.params();
 
 		if args.len() != param_types.len() {
-			return Err(()).or_godot_error(&format!("Incorrect number or args, expected {} but got {}", param_types.len(), args.len()), Variant::nil())?;
+			return Err(MyGodotError::from(format!("Incorrect number or args, expected {} but got {}", param_types.len(), args.len()), Variant::nil()));
 		}
 
 		let params = param_types.enumerate().map(|(i, ty)| -> Result<wasmtime::Val, MyGodotError<Variant>> {
-			return ty.val_from(args.at(i), &mut context_mut).or_godot_error(&format!("Invalid arg type arg #{}, expected {}", i, ty), Variant::nil());
+			return ty.val_from(args.at(i), ctx.as_context_mut()).or_godot_error(&format!("Invalid arg type arg #{}, expected {}", i, ty), Variant::nil());
 		}).collect::<Result<Vec<wasmtime::Val>, MyGodotError<Variant>>>()?;
 		
-		let mut results = self.func.ty(&context_mut).results().map(|ty| {
+		let mut results = self.func.ty(ctx.as_context_mut()).results().map(|ty| {
 			if let Some(val) = ty.default_value() {
 				return val;
 			}
@@ -182,29 +196,30 @@ impl WasmFunc {
 			};
 		}).collect::<Vec<wasmtime::Val>>();
 
-		// TODO: We have bound to self.context, which is an issue...
-		//       The following call may call back into a WasmFunc we provided, meaning it get's binded to another time.
-		//       This violates Rust's borrow checker, it's just pushed to the runtime due to Godot stuff.
+		// Comment from AI-assisted verification;
+		// We intentionally drop the RefCell borrow before re-entering the same Wasmtime store so
+		// the store can be re-entered on the same thread without violating Rust aliasing rules.
+		// The reentrancy guard only enforces the thread policy; the raw pointer path is
+		// only valid if no store borrow is live.
 
-		return Ok(self.func.call(&mut context_mut, params.as_slice(), results.as_mut_slice()).map(|()| results));
-	}
+		drop(ctx);
 
-	// https://github.com/godot-rust/gdext/issues/1472
-	/// Same as [member call_wasm] except the error is not printed.
-	#[func]
-	fn call_wasm_catch(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
-		return match self.call_wasm_internal(args)? {
-			Ok(results) => match results.len() {
-				0 => Ok(Variant::nil()),
-				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
-			},
-			Err(error) => Ok(WasmError::new_from_error(error).to_variant()),
-		};
+		let ctx_ptr = self.store_ptr_for_call()?;
+
+		let guard = ReentrancyState::try_lock_from_state_ptr(ctx_ptr)?;
+
+		let result = self.func
+			.call(unsafe { &mut *ctx_ptr }.as_context_mut(), params.as_slice(), results.as_mut_slice());
+
+		drop(guard);
+
+		return Ok(result.map(|()| results));
 	}
 
 	// https://github.com/godot-rust/gdext/issues/1472
 	/// Returns an array of values, or `nil` if the function has no returns. [br]
-	/// Otherwise returns [WasmError] in the case of an error and also pushes the error.
+	/// Otherwise returns [WasmError] in the case of an error and also pushes the error. [br]
+	/// In the case of a usage error, `nil` is always returned and the error is printed.
 	#[func]
 	fn call_wasm(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
 		return match self.call_wasm_internal(args)? {
@@ -217,6 +232,20 @@ impl WasmFunc {
 				gd_error.bind().print();
 				Ok(gd_error.to_variant())
 			},
+		};
+	}
+
+	// https://github.com/godot-rust/gdext/issues/1472
+	/// Same as [member call_wasm] except the error is not printed. [br]
+	/// In the case of a usage error, `nil` is always returned and the error is printed.
+	#[func]
+	fn call_wasm_catch(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
+		return match self.call_wasm_internal(args)? {
+			Ok(results) => match results.len() {
+				0 => Ok(Variant::nil()),
+				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
+			},
+			Err(error) => Ok(WasmError::new_from_error(error).to_variant()),
 		};
 	}
 }

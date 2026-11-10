@@ -9,6 +9,14 @@ pub(crate) type MyGodotResult<T, E = MyGodotError<T>> = Result<T, E>;
 pub(crate) struct MyGodotError<T> { pub value: T, pub msg: String, pub err: Option<Box<dyn std::fmt::Display + 'static>> }
 
 impl<T> MyGodotError<T> {
+	pub fn from(msg: String, value: T) -> MyGodotError::<T> {
+		return MyGodotError::<T> {
+			value: value,
+			msg: msg,
+			err: None,
+		};
+	}
+
 	/// Makes the Rust error not printed to Godot.
 	pub fn without_err(self) -> Self {
 		return Self {

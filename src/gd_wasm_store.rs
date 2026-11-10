@@ -1,9 +1,10 @@
+use std::{cell::RefCell, rc::Rc};
+
 use godot::prelude::*;
-use wasmtime::{AsContext, AsContextMut};
+use wasmtime::AsContextMut;
 
 use crate::{
-	gd_wasm_engine::WasmEngine, store_data::StoreData, store_same_as::ContextStoreSameAs,
-	utils::GdAsContext, utils_errors::{IntoMyGodotOption,IntoMyGodotResult, MyGodotResult}
+	gd_wasm_engine::WasmEngine, store_data::StoreData, store_same_as::ContextStoreSameAs, utils::GdAsContext, utils_errors::{IntoMyGodotOption,IntoMyGodotResult, MyGodotResult}
 };
 
 /// A Wasmtime Linker, to link wasm modules/instances together and provide imports from the host.
@@ -15,7 +16,7 @@ use crate::{
 #[derive(GodotClass)]
 #[class(base=RefCounted)]
 pub struct WasmStore {
-	pub store: wasmtime::Store<StoreData>,
+	pub store: Rc<RefCell<wasmtime::Store<StoreData>>>,
 
 	#[var(get = get_fuel, set = _set_fuel)]
 	fuel: PhantomVar<i64>,
@@ -26,8 +27,10 @@ pub struct WasmStore {
 #[godot_api]
 impl IRefCounted for WasmStore {
 	fn init(_base: Base<Self::Base>) -> Self {
+		let store = Rc::new(RefCell::new(wasmtime::Store::new(&wasmtime::Engine::default(), StoreData::new())));
+		store.borrow_mut().data_mut().store = Some(store.clone());
 		return Self {
-			store: wasmtime::Store::new(&wasmtime::Engine::default(), StoreData::new()),
+			store,
 			fuel: Default::default(),
 			host_call_fuel_use: Default::default(),
 		};
@@ -39,8 +42,10 @@ impl WasmStore {
 	/// Creates a new [WasmStore], which is a collection of WebAssembly instances and host-defined state.
 	#[func]
 	fn new_with(engine: Gd<WasmEngine>) -> Gd<Self> {
+		let store = Rc::new(RefCell::new(wasmtime::Store::new(&engine.bind().engine, StoreData::new())));
+		store.borrow_mut().data_mut().store = Some(store.clone());
 		return Gd::from_object(Self {
-			store: wasmtime::Store::new(&engine.bind().engine, StoreData::new()),
+			store,
 			fuel: Default::default(),
 			host_call_fuel_use: Default::default(),
 		});
@@ -55,7 +60,7 @@ impl WasmStore {
 
 	#[func]
 	pub fn get_fuel(&self) -> i64 {
-		return self.store.get_fuel()
+		return self.as_context().get_fuel()
 			.or_print_error("Failed to get fuel")
 			.map(|v| v as i64)
 			.unwrap_or(-1);
@@ -65,35 +70,31 @@ impl WasmStore {
 	#[doc(hidden)]
 	pub fn _set_fuel(&mut self, fuel: i64) {
 		// Result is ignored
-		self.store.set_fuel(fuel as u64)
+		self.as_context_mut().set_fuel(fuel as u64)
 			.or_print_error("Failed to set fuel");
 	}
 
 	#[func]
 	pub fn set_fuel(&mut self, fuel: i64) -> MyGodotResult<bool> {
-		return self.store.set_fuel(fuel as u64)
+		return self.as_context_mut().set_fuel(fuel as u64)
 			.map(|()| true)
 			.or_godot_error("Failed to set fuel", false);
 	}
 
 	#[func]
 	pub fn get_host_call_fuel_use(&self) -> i64 {
-		return self.store.data().call_fuel_use as i64;
+		return self.as_context().data().call_fuel_use as i64;
 	}
 
 	#[func]
 	pub fn set_host_call_fuel_use(&mut self, fuel: i64) {
-		self.store.data_mut().call_fuel_use = fuel as u64;
+		self.as_context_mut().data_mut().call_fuel_use = fuel as u64;
 	}
 }
 
 #[godot_dyn]
 impl GdAsContext for WasmStore {
-	fn as_context(&self) -> wasmtime::StoreContext<'_, StoreData> {
-		return self.store.as_context();
-	}
-
-	fn as_context_mut(&mut self) -> wasmtime::StoreContextMut<'_, StoreData> {
-		return self.store.as_context_mut();
+	fn get_context(&self) -> Rc<RefCell<dyn AsContextMut<Data = StoreData>>> {
+		return self.store.clone();
 	}
 }

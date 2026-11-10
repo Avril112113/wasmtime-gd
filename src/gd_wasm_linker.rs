@@ -1,6 +1,7 @@
 use godot::prelude::*;
 
 use crate::store_data::StoreData;
+use crate::utils::GdAsContext;
 use crate::{
     gd_wasm_engine::WasmEngine, gd_wasm_instance::WasmInstance, gd_wasm_module::WasmModule, gd_wasm_store::WasmStore,
     utils_errors::*, wasm_types::WasmAsExtern
@@ -36,7 +37,7 @@ impl WasmLinker {
     /// May return `null` in case of error, which will be logged.
     #[func]
     fn instantiate(&mut self, mut store: Gd<WasmStore>, module: Gd<WasmModule>) -> Option<Gd<WasmInstance>> {
-        let instance = self.linker.instantiate(&mut store.bind_mut().store, &module.bind().module)
+        let instance = self.linker.instantiate(store.bind_mut().as_context_mut(), &module.bind().module)
             .or_print_error("Failed to create Instance:")?;
         
         return Some(Gd::from_object(WasmInstance::new(instance, store)));
@@ -48,7 +49,7 @@ impl WasmLinker {
     #[func]
     fn define(&mut self, mut store: Gd<WasmStore>, module: GString, name: GString, wasm_extern: DynGd<RefCounted, dyn WasmAsExtern>) -> bool {
         let extern_val = wasm_extern.dyn_bind().as_extern();
-        return self.linker.define(&mut store.bind_mut().store, &module.to_string(), &name.to_string(), extern_val)
+        return self.linker.define(store.bind_mut().as_context_mut(), &module.to_string(), &name.to_string(), extern_val)
             .or_print_error(&format!("Failed to define \"{}::{}\"", module, name))
             .is_some();
     }
