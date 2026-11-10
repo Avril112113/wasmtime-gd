@@ -1,4 +1,6 @@
 
+use std::fmt::Display;
+
 use godot::{global::{PrintRecord, print_custom}, meta::{Element, error::{CallOutcome, ErrorToGodot}}};
 
 use crate::gd_script_stuff::{GDScriptStuff, ToPrintSourceOption};
@@ -32,6 +34,17 @@ impl<T> MyGodotError<T> {
 			msg: self.msg,
 			err: self.err,
 		};
+	}
+}
+
+impl<T> Display for MyGodotError<T> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let message = if let Some(err) = self.err.as_ref() {
+			format!("{}: {}", self.msg, err)
+		} else {
+			format!("{}", self.msg)
+		};
+		return f.write_str(&message);
 	}
 }
 

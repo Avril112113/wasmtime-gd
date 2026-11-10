@@ -23,6 +23,7 @@ mod gd_wasm_store;
 mod gd_wasm_caller;
 mod gd_wasm_instance;
 mod store_same_as;
+mod thread_safe_variant;
 
 use godot::prelude::*;
 

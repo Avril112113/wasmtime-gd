@@ -208,8 +208,7 @@ impl WasmFunc {
 
 		let guard = ReentrancyState::try_lock_from_state_ptr(ctx_ptr)?;
 
-		let result = self.func
-			.call(unsafe { &mut *ctx_ptr }.as_context_mut(), params.as_slice(), results.as_mut_slice());
+		let result = self.func.call(unsafe { &mut *ctx_ptr }.as_context_mut(), params.as_slice(), results.as_mut_slice());
 
 		drop(guard);
 
@@ -219,16 +218,22 @@ impl WasmFunc {
 	// https://github.com/godot-rust/gdext/issues/1472
 	/// Returns an array of values, or `nil` if the function has no returns. [br]
 	/// Otherwise returns [WasmError] in the case of an error and also pushes the error. [br]
-	/// In the case of a usage error, `nil` is always returned and the error is printed.
 	#[func]
 	fn call_wasm(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
-		return match self.call_wasm_internal(args)? {
-			Ok(results) => match results.len() {
-				0 => Ok(Variant::nil()),
-				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
-			},
+		return match self.call_wasm_internal(args) {
+			Ok(result) => match result {
+				Ok(results) => match results.len() {
+					0 => Ok(Variant::nil()),
+					_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
+				},
+				Err(error) => {
+					let gd_error = WasmError::new_from_error(error);
+					gd_error.bind().print();
+					Ok(gd_error.to_variant())
+				},
+			}
 			Err(error) => {
-				let gd_error = WasmError::new_from_error(error);
+				let gd_error = WasmError::new_from_any_error(anyhow::anyhow!(format!("{}", error)));
 				gd_error.bind().print();
 				Ok(gd_error.to_variant())
 			},
@@ -237,15 +242,17 @@ impl WasmFunc {
 
 	// https://github.com/godot-rust/gdext/issues/1472
 	/// Same as [member call_wasm] except the error is not printed. [br]
-	/// In the case of a usage error, `nil` is always returned and the error is printed.
 	#[func]
 	fn call_wasm_catch(&mut self, args: Array<Variant>) -> MyGodotResult<Variant> {
-		return match self.call_wasm_internal(args)? {
-			Ok(results) => match results.len() {
-				0 => Ok(Variant::nil()),
-				_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
-			},
-			Err(error) => Ok(WasmError::new_from_error(error).to_variant()),
+		return match self.call_wasm_internal(args) {
+			Ok(result) => match result {
+				Ok(results) => match results.len() {
+					0 => Ok(Variant::nil()),
+					_ => Ok(Array::from_iter(results.iter().map(|val| val.to_variant(self.context.clone()))).to_variant())
+				},
+				Err(error) => Ok(WasmError::new_from_error(error).to_variant()),
+			}
+			Err(error) => Ok(WasmError::new_from_any_error(anyhow::anyhow!(format!("{}", error))).to_variant()),
 		};
 	}
 }
