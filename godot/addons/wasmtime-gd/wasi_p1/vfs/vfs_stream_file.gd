@@ -55,7 +55,7 @@ class FdHandle:
 			return Wasip1Consts.Errno.EAGAIN
 		buffer.seek(0)
 		var result := buffer.get_data(count)
-		prints("read", result)
+		#prints("read", result)
 		bytes.append_array(result[1])
 		if result[0] == Error.OK:
 			return Wasip1Consts.Errno.ESUCCESS

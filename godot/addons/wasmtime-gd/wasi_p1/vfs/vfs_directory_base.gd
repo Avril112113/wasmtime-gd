@@ -13,6 +13,6 @@ func get_filesize() -> int:
 	return 4096  # Based on a real FS value, which is roughly constant.
 
 ## [param path] is the full relative path.
-## Returns [Wasip1VfsEntryBase] or [Wasip1Consts.Errno]
+## Returns [Wasip1VfsEntryBase] or [enum Wasip1Consts.Errno]
 @abstract
 func get_child(relative_path: String) -> Variant

@@ -22,7 +22,7 @@ func get_create_time() -> int:
 	return self.vfs.epoch_nsec
 
 ## [param path] is the full relative path.
-## Returns [Wasip1VfsEntryBase] or [Wasip1Consts.Errno]
+## Returns [Wasip1VfsEntryBase] or [enum Wasip1Consts.Errno]
 func get_child(path: String) -> Variant:
 	var child_path = self._real_path.path_join(path).simplify_path()
 	if not (child_path.begins_with(self._real_path) and child_path.substr(len(self._real_path), 1) == "/"):

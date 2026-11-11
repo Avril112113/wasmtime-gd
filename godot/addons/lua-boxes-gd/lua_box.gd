@@ -3,15 +3,55 @@ class_name LuaBox
 
 
 # LUA_REGISTRYINDEX	(-(INT_MAX/2 + 1000))
-const RegistryIndex := -(2147483647/2 + 1000);
+const RegistryIndex := -1073742823
 
-const RIdxGlobals := 2;
-const RIdxMainThread := 3;
+const RIdxGlobals := 2
+const RIdxMainThread := 3
+
+## Option for multiple returns in `lua_pcall` and `lua_call`
+const MultRet := -1
+
+enum LuaErr {
+	OK = 0,
+	YIELD = 1,
+	ERRRUN = 2,
+	ERRSYNTAX = 3,
+	ERRMEM = 4,
+	ERRERR = 5,
+	## Extra error code for `luaL_loadfilex`
+	ERRFILE = ERRERR + 1,
+}
+
+enum LuaType {
+	NONE = -1,
+	NIL = 0,
+	BOOLEAN = 1,
+	LIGHTUSERDATA = 2,
+	NUMBER = 3,
+	STRING = 4,
+	TABLE = 5,
+	FUNCTION = 6,
+	USERDATA = 7,
+	THREAD = 8,
+}
+
+enum LuaLibs {
+	BASE = 1,
+	PACKAGE = BASE << 1,
+	COROUTINE = PACKAGE << 1,
+	DEBUG = COROUTINE << 1,
+	IO = DEBUG << 1,
+	MATH = IO << 1,
+	OS = MATH << 1,
+	STRING = OS << 1,
+	TABLE = STRING << 1,
+	UTF8 = TABLE << 1,
+}
 
 
 static var _config: WasmConfig = null
 static var _engine: WasmEngine
-static var _module: WasmModule
+static var _module: WasmModule = null
 static var _dwarf: WasmDwarf = null
 
 
@@ -27,15 +67,19 @@ static func __ensure_init(force_reload: bool = false) -> void:
 			.wasm_backtrace_details("Disable") \
 			.consume_fuel(true)
 		_engine = WasmEngine.new_with(_config)
-		_module = WasmModule.new_from_file(_engine, "res://addons/lua-boxes-gd/lua.wasm")
+		
+		if FileAccess.file_exists("res://addons/lua-boxes-gd/lua.wasm.compiled"):
+			_module = WasmModule.deserialize(_engine, FileAccess.get_file_as_bytes("res://addons/lua-boxes-gd/lua.wasm.compiled"))
+		
+		if _module == null:
+			_module = WasmModule.new_from_file(_engine, "res://addons/lua-boxes-gd/lua.wasm")
+			
+			if Engine.is_editor_hint():
+				var f := FileAccess.open("res://addons/lua-boxes-gd/lua.wasm.compiled", FileAccess.WRITE)
+				f.store_buffer(_module.serialize())
+				f.close()
 		
 		_dwarf = WasmDwarf.new_from(FileAccess.get_file_as_bytes("res://addons/lua-boxes-gd/lua.wasm"))
-		
-		#_module = WasmModule.deserialize(_engine, FileAccess.get_file_as_bytes("res://addons/lua-boxes-gd/lua.wasm.compiled"))
-		
-		#var f := FileAccess.open("res://addons/lua-boxes-gd/lua.wasm.compiled", FileAccess.WRITE)
-		#f.store_buffer(_module.serialize())
-		#f.close()
 		
 		var finish := Time.get_ticks_msec()
 		print("__ensure_init() took %sms" % [(finish-start)])
@@ -88,11 +132,13 @@ func main_cli() -> int:
 		return -99999
 	return result[0]
 
-## May return [WasmError] instead in the case of a wasm error.
+func get_main_state() -> LuaState:
+	return LuaState.new(LuaStateRaw.new(self, self._exports.get_global_state()[0]))
+
 func new_state() -> LuaState:
 	var state_ptr := self._exports.luaL_newstate()
 	if state_ptr is Array and len(state_ptr) == 1 and state_ptr[0] is int:
-		return LuaState.new(self, state_ptr[0])
+		return LuaState.new(LuaStateRaw.new(self, state_ptr[0]))
 	elif state_ptr is WasmError:
 		return state_ptr
 	printerr("luaL_newstate() returned unexpect value %s" % [state_ptr])
@@ -106,3 +152,27 @@ func _get_or_add_indirect_function(callable: Callable) -> int:
 	_exports.__indirect_function_table.grow(1, WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], callable))
 	_function_table_indicies[callable] = idx
 	return idx
+
+func _malloc_string(s: String) -> int:
+	var bytes := s.to_utf8_buffer()
+	bytes.append(0)
+	var ptr: int = self._exports._malloc(len(bytes))[0]
+	self._exports.memory.write(ptr, bytes)
+	return ptr
+
+func _malloc_bytes(bytes: PackedByteArray) -> int:
+	var ptr: int = self._exports._malloc(len(bytes))[0]
+	self._exports.memory.write(ptr, bytes)
+	return ptr
+
+func _free(ptr: int) -> void:
+	self._exports._free(ptr)
+
+func _read_null_terminated_string(ptr: int, limit := 1024*1024*1024) -> String:
+	var bytes := PackedByteArray()
+	while len(bytes) <= limit:
+		var byte := self._exports.memory.read(ptr + len(bytes), 1)[0]
+		if byte == 0:
+			return bytes.get_string_from_utf8()
+		bytes.append(byte)
+	return ""

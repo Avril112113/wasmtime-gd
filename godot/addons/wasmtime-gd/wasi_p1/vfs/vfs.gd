@@ -21,7 +21,7 @@ func _init(clock: Wasip1ClockRealtime) -> void:
 	self._vroot = Wasip1VfsVirtualDirectory.new(self)
 	self._epoch_nsec = clock.now_nsec
 
-## Returns [Wasip1VfsEntryBase] or [Wasip1Consts.Errno] in the case of failure.
+## Returns [Wasip1VfsEntryBase] or [enum Wasip1Consts.Errno] in the case of failure.
 func get_entry(path: String) -> Variant:
 	var root: Wasip1VfsDirectoryBase
 	if path.begins_with("/"):
@@ -33,7 +33,7 @@ func get_entry(path: String) -> Variant:
 	return root if path == "" else root.get_child(path)
 	
 
-## Returns [Wasip1VfsHandle] or [Wasip1Consts.Errno] in the case of failure.
+## Returns [Wasip1VfsHandle] or [enum Wasip1Consts.Errno] in the case of failure.
 func open_fd(path: String, fd: int = -1) -> Variant:
 	var entry := self.get_entry(path)
 	if entry is not Wasip1VfsEntryBase:

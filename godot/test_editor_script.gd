@@ -57,30 +57,27 @@ func _run() -> void:
 	
 	print("~~~~~ my_gd_fn")
 	
-	var global_state_ptr: int = box._exports.get_global_state()[0]
+	var main_state := box.get_main_state()._state
 	
 	var my_gd_fn_ptr := box._get_or_add_indirect_function(
 		func(_caller: WasmCaller, lua_state_ptr: int):
+			var state := LuaStateRaw.new(box, lua_state_ptr)
+			
 			#var t := Thread.new()
-			#t.start(func(): return box._exports.lua_pushinteger(lua_state_ptr, 112233))
+			#t.start(func(): return state.lua_pushinteger(112233))
 			#var result: Variant = t.wait_to_finish()
 			#print("Thread result: ", result)
 			#if result is WasmError:
 				#result.print()
+			#return 0
 			
-			#box._exports.lua_pushinteger(lua_state_ptr, 112233)
-			#return 1
-
-			return box._exports.lua_error(lua_state_ptr)
+			state.lua_pushinteger(112233)
+			return 1
+			#return state.lua_error()
 	)
-	box._exports.lua_pushcclosure(global_state_ptr, my_gd_fn_ptr, 0)
+	main_state.lua_pushcclosure(my_gd_fn_ptr, 0)
 	
-	var global_name := "my_gd_fn".to_utf8_buffer()
-	global_name.append(0)
-	var global_name_ptr: int = box._exports._malloc(len(global_name))[0]
-	box._exports.memory.write(global_name_ptr, global_name)
-	box._exports.lua_setglobal(global_state_ptr, global_name_ptr)
-	box._exports._free(global_name_ptr)
+	main_state.lua_setglobal("my_gd_fn")
 	
 	print("~~~~~ main_cli()")
 	
@@ -89,11 +86,6 @@ func _run() -> void:
 	print(box.main_cli())
 	var finish := Time.get_unix_time_from_system()
 	print("Took %ss and %s fuel" % [finish - start, starting_fuel - box._store.fuel])
-	
-	#print("~~~~~ new state")
-	#
-	#var state := box.new_state()
-	#print(state)
 	
 	print("~~~~~ TEST OUT")
 	

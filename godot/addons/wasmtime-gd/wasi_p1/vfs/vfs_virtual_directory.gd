@@ -24,7 +24,7 @@ func get_create_time() -> int:
 	return self._create_time
 
 ## [param path] is the full relative path.
-## Returns [Wasip1VfsEntryBase] or [Wasip1Consts.Errno]
+## Returns [Wasip1VfsEntryBase] or [enum Wasip1Consts.Errno]
 func get_child(path: String) -> Variant:
 	self._access_time = self.vfs._clock.now_nsec
 	var parts = path.split("/", true, 1)
