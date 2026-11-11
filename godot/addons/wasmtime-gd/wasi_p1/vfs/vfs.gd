@@ -297,7 +297,17 @@ var _wasm_fd_seek = [
 	["i32", "i64", "i32", "i32"],
 	["i32"],
 	func _wasm_fd_seek(caller: WasmCaller, fd, offset, whence, newoffset):
-		return WasmError.new_from("Not implemented.")
+		if fd not in self._file_descriptors:
+			return Wasip1Consts.Errno.EBADF
+		var descriptor := self._file_descriptors[fd]
+		
+		var memory := caller.get_memory()
+		if memory == null:
+			return Wasip1Consts.Errno.ENOSYS
+		
+		var result := descriptor.handle.fd_seek(offset, whence)
+		memory.write_u32(newoffset, result[1])
+		return result[0]
 ]
 
 #https://wasix.org/docs/api-reference/wasi/fd_sync
@@ -313,7 +323,17 @@ var _wasm_fd_tell = [
 	["i32", "i32"],
 	["i32"],
 	func _wasm_fd_tell(caller: WasmCaller, fd, offset):
-		return WasmError.new_from("Not implemented.")
+		if fd not in self._file_descriptors:
+			return Wasip1Consts.Errno.EBADF
+		var descriptor := self._file_descriptors[fd]
+		
+		var memory := caller.get_memory()
+		if memory == null:
+			return Wasip1Consts.Errno.ENOSYS
+		
+		var result := descriptor.handle.fd_tell()
+		memory.write_u32(offset, result[1])
+		return result[0]
 ]
 
 #https://wasix.org/docs/api-reference/wasi/fd_write
