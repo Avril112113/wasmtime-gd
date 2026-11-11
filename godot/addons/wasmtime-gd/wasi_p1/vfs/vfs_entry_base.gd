@@ -68,12 +68,12 @@ func _wasm_write_memory_filestat(offset: int, memory: WasmMemory) -> int:
 	  #__wasi_timestamp_t st_mtim;
 	  #__wasi_timestamp_t st_ctim;
 	#} __wasi_filestat_t;
-	offset += memory.write_u64(offset, 0, 8)  # device_num, Not Implemented.
-	offset += memory.write_u64(offset, 0, 8)  # inode_num, Not Implemented.
-	offset += memory.write_u8(offset, get_filetype(), 8)
+	offset += memory.write_u64(offset, 0)  # device_num, Not Implemented.
+	offset += memory.write_u64(offset, 0)  # inode_num, Not Implemented.
+	offset += memory.write_u8(offset, get_filetype())
 	offset += memory.write_u64(offset, 0, 8)  # link_count, Not Implemented.
-	offset += memory.write_u64(offset, get_filesize(), 8)
-	offset += memory.write_u64(offset, get_access_time(), 8)
-	offset += memory.write_u64(offset, get_modify_time(), 8)
-	offset += memory.write_u64(offset, get_create_time(), 8)
+	offset += memory.write_u64(offset, get_filesize())
+	offset += memory.write_u64(offset, get_access_time())
+	offset += memory.write_u64(offset, get_modify_time())
+	offset += memory.write_u64(offset, get_create_time())
 	return offset

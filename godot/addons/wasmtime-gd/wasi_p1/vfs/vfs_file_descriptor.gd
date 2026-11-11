@@ -21,10 +21,10 @@ func _wasm_write_memory_filestat(offset: int, memory: WasmMemory) -> int:
 	  #__wasi_rights_t fs_rights_base;
 	  #__wasi_rights_t fs_rights_inheriting;
 	#} __wasi_fdstat_t;
-	offset += memory.write_u8(offset, self.handle.entry.get_filetype(), 8)
-	offset += memory.write_u16(offset, self.flags, 8)
-	offset += memory.write_u64(offset, self.rights, 8)
-	offset += memory.write_u64(offset, self.rights_inheriting, 8)
+	offset += memory.write_u8(offset, self.handle.entry.get_filetype())
+	offset += memory.write_u16(offset, self.flags)
+	offset += memory.write_u64(offset, self.rights)
+	offset += memory.write_u64(offset, self.rights_inheriting)
 	return offset
 
 func _wasm_write_memory_prestat(offset: int, memory: WasmMemory) -> int:
@@ -42,9 +42,9 @@ func _wasm_write_memory_prestat(offset: int, memory: WasmMemory) -> int:
 	  #uint8_t tag;
 	  #__wasi_prestat_u_t u;
 	#} __wasi_prestat_t;
-	offset += memory.write_u8(offset, 0 if self.handle.entry.get_filetype() == Wasip1Consts.FileType.DIRECTORY else 255, 4)
-	offset += memory.write_u32(offset, self.path.length(), 4)
+	offset += memory.write_u8(offset, 0 if self.handle.entry.get_filetype() == Wasip1Consts.FileType.DIRECTORY else 255)
+	offset += memory.write_u32(offset, self.path.length())
 	return offset
 
 func _wasm_write_memory_prestat_dir_name(path_ptr: int, path_len: int, memory: WasmMemory) -> int:
-	return memory.write(path_ptr, self.path.substr(0, path_len).to_utf8_buffer(), 4)
+	return memory.write(path_ptr, self.path.substr(0, path_len).to_utf8_buffer())
