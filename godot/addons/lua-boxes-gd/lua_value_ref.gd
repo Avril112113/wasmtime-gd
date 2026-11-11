@@ -28,6 +28,16 @@ func _notification(what: int) -> void:
 		if self._idx <= 0:
 			self._state.luaL_unref(LuaBox.RegistryIndex, self._ref_key)
 
+## Only used for Globals and MainState
+func _pin_set(ref_key: int) -> void:
+	self._ref_key = ref_key
+	self._idx = -1
+	
+	self._state.lua_rawgeti(LuaBox.RegistryIndex, ref_key)
+	self._type = self._state.lua_type(-1)
+	self._pointer = self._state.lua_topointer(-1)
+	self._state.lua_pop(1)
+
 func _pin() -> bool:
 	var pushed := self._push(self._state)
 	if pushed != 1:
@@ -147,9 +157,9 @@ func lua_pcall(err_handler: LuaFunction = null, ...args: Array[Variant]) -> Vari
 ## Returns [WasmError] on error, otherwise [Variant] on sucsess.
 func lua_get(key: Variant) -> Variant:
 	# _state: ...
-	assert(self._push(self._state) == 1)
+	assert(self._push(self._state) == 1, "lua_get failed to push self")
 	# _state: ..., self
-	assert(self._state._push_variant(key) == 1)
+	assert(self._state._push_variant(key) == 1, "lua_get failed to push key")
 	# _state: ..., self, key
 	var result := self._state.lua_gettable(-2)
 	if result is WasmError:
@@ -166,11 +176,11 @@ func lua_get(key: Variant) -> Variant:
 ## Returns [WasmError] on error, otherwise [code]null[/code] on sucsess.
 func lua_set(key: Variant, value: Variant) -> WasmError:
 	# _state: ...
-	assert(self._push(self._state) == 1)
+	assert(self._push(self._state) == 1, "lua_set failed to push self")
 	# _state: ..., self
-	assert(self._state._push_variant(key) == 1)
+	assert(self._state._push_variant(key) == 1, "lua_set failed to push key")
 	# _state: ..., self, key
-	assert(self._state._push_variant(value) == 1)
+	assert(self._state._push_variant(value) == 1, "lua_set failed to push value")
 	# _state: ..., self, key, value
 	var result := self._state.lua_settable(-3)
 	if result is WasmError:
@@ -183,7 +193,7 @@ func lua_set(key: Variant, value: Variant) -> WasmError:
 ## Returns [WasmError] on error, otherwise [Variant] on sucsess.
 func lua_len() -> Variant:
 	# _state: ...
-	self._push(self._state)
+	assert(self._push(self._state) == 1, "lua_len failed to push self")
 	# _state: ..., self
 	var result := self._state.lua_len(-1)
 	if result is WasmError:

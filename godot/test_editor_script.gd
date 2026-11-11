@@ -6,6 +6,7 @@ extends EditorScript
 
 
 func _run() -> void:
+	print("\n\n\n")
 	print("~~~~~ SETUP")
 	
 	var clock := Wasip1ClockRealtime.new()
@@ -61,7 +62,7 @@ func _run() -> void:
 	
 	var my_gd_fn_ptr := box._get_or_add_indirect_function(
 		func(_caller: WasmCaller, lua_state_ptr: int):
-			var state := LuaStateRaw.new(box, lua_state_ptr)
+			var state := box._get_state_raw(lua_state_ptr)
 			
 			#var t := Thread.new()
 			#t.start(func(): return state.lua_pushinteger(112233))

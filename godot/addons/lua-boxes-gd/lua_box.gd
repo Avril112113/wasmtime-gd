@@ -93,6 +93,9 @@ var _exports: LuaWasmExports
 
 var _function_table_indicies: Dictionary[Callable, int] = {}
 
+var _raw_states: Dictionary[int, WeakRef] = {}
+var _states: Dictionary[int, WeakRef] = {}
+
 var wasi_environment: Wasip1Environment
 var wasi_vfs: Wasip1Vfs
 var wasi_clock: Wasip1ClockRealtime:
@@ -133,16 +136,45 @@ func main_cli() -> int:
 	return result[0]
 
 func get_main_state() -> LuaState:
-	return LuaState.new(LuaStateRaw.new(self, self._exports.get_global_state()[0]))
+	return self._get_state_from(self._exports.get_global_state()[0])
 
 func new_state() -> LuaState:
 	var state_ptr := self._exports.luaL_newstate()
 	if state_ptr is Array and len(state_ptr) == 1 and state_ptr[0] is int:
-		return LuaState.new(LuaStateRaw.new(self, state_ptr[0]))
+		return self._get_state_from(state_ptr[0])
 	elif state_ptr is WasmError:
 		return state_ptr
 	printerr("luaL_newstate() returned unexpect value %s" % [state_ptr])
 	return null
+
+func _get_state_raw(state_ptr: int) -> LuaStateRaw:
+	if state_ptr == null:
+		return null
+	
+	if state_ptr in self._raw_states:
+		var weak := self._raw_states[state_ptr].get_ref()
+		if weak != null:
+			return weak
+	
+	var state_raw := LuaStateRaw.new(self, state_ptr)
+	self._raw_states[state_ptr] = weakref(state_raw)
+	return state_raw
+
+func _get_state(state_raw: LuaStateRaw) -> LuaState:
+	if state_raw._state_ptr in self._states:
+		var weak := self._states[state_raw._state_ptr].get_ref()
+		if weak != null:
+			return weak
+	
+	var state := LuaState.new(state_raw)
+	self._states[state_raw._state_ptr] = weakref(state)
+	return state
+
+func _get_state_from(state_ptr: int) -> LuaState:
+	if state_ptr == null:
+		return null
+		
+	return self._get_state(self._get_state_raw(state_ptr))
 
 func _get_or_add_indirect_function(callable: Callable) -> int:
 	if callable in _function_table_indicies:

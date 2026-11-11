@@ -5,12 +5,15 @@ var box: LuaBox
 var _state_ptr: int
 
 
+## Use [method LuaBox._get_state_raw] instead
 func _init(box: LuaBox, state_ptr: int) -> void:
 	self.box = box
 	self._state_ptr = state_ptr
+	if state_ptr in box._raw_states:
+		push_warning("LuaStateRaw.new() is invalid, use LuaBox._get_state_raw() (multiple instances of LuaStateRaw now exist for this state)")
 
 func _to_string() -> String:
-	return "<LuaStateRaw 0x%x>" % [self._state._state_ptr]
+	return "<LuaStateRaw 0x%x>" % [self._state_ptr]
 
 ## Custom debugging utility.
 func _string_lua_stack() -> String:
@@ -53,7 +56,7 @@ func _to_variant(idx: int) -> Variant:
 		LuaBox.LuaType.FUNCTION:
 			return LuaFunction.new(self, idx)
 		LuaBox.LuaType.THREAD:
-			return LuaState.new(self.lua_tothread(idx))
+			return self.box._get_state(self.lua_tothread(idx))
 	assert(false, "Unsupported type '%s' _to_variant(%s)" % [self.lua_typename(ltype), idx])
 	return null
 
@@ -999,7 +1002,7 @@ func lua_tothread(idx: int) -> LuaStateRaw:
 		if not result.is_throw_exception():
 			result.print()
 		return result
-	return LuaStateRaw.new(self.box, result[0])
+	return self.box._get_state_raw(result[0])
 
 ## [br][br]
 ## [-0, +0, –] [br]

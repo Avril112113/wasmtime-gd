@@ -3,6 +3,7 @@ extends EditorScript
 
 
 func _run() -> void:
+	print("\n\n\n")
 	print("~~~~~ TEST SETUP")
 	
 	var clock := Wasip1ClockRealtime.new()
@@ -23,17 +24,25 @@ func _run() -> void:
 	
 	print("~~~~~ TEST STUFF")
 	
-	var state := box.new_state()
-	state.openlibs()
+	var main_state := box.new_state()
+	main_state.openlibs()
 	
-	print(state.lua_registry.lua_get(3))
+	# TODO
+	main_state.lua_globals.lua_set("fn1", func(...args: Array):
+		print("Haii! :D ", args)
+		return [123, "simpley cool!"]
+	)
+	# TODO
+	main_state.lua_globals.lua_set("fn2", main_state.gdfunction(func(state: LuaState, ...args: Array):
+		print("Nice state ", state, " ", args)
+		return [123, "what a state!"]
+	))
 	
-	#var fn: LuaFunction = state.loadstring("return {}")
-	#print(fn)
-	#print(fn.lua_pcall())
+	var fn: LuaFunction = main_state.loadstring("print(fn())")
+	print(fn.lua_pcall())
 	
 	print()
-	print(state._state._string_lua_stack())
+	print(main_state._state._string_lua_stack())
 	
 	print("~~~~~ TEST OUT")
 	
