@@ -28,7 +28,7 @@ pub struct WasmStore {
 impl IRefCounted for WasmStore {
 	fn init(_base: Base<Self::Base>) -> Self {
 		let store = Rc::new(RefCell::new(wasmtime::Store::new(&wasmtime::Engine::default(), StoreData::new())));
-		store.borrow_mut().data_mut().store = Some(store.clone());
+		// store.borrow_mut().data_mut().store = Some(store.clone());
 		return Self {
 			store,
 			fuel: Default::default(),
@@ -43,7 +43,7 @@ impl WasmStore {
 	#[func]
 	fn new_with(engine: Gd<WasmEngine>) -> Gd<Self> {
 		let store = Rc::new(RefCell::new(wasmtime::Store::new(&engine.bind().engine, StoreData::new())));
-		store.borrow_mut().data_mut().store = Some(store.clone());
+		// store.borrow_mut().data_mut().store = Some(store.clone());
 		return Gd::from_object(Self {
 			store,
 			fuel: Default::default(),

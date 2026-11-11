@@ -28,7 +28,7 @@ impl ToFromVariant for wasmtime::TagType {
 		};
 
 		return Ok(wasmtime::TagType::new(
-			wasmtime::FuncType::from_variant(engine, &array.at(2))?
+			wasmtime::FuncType::from_variant(engine, &array.at(1))?
 		));
 	}
 }

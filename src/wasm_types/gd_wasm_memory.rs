@@ -132,6 +132,9 @@ impl WasmMemory {
 
 	fn _write(&mut self, offset: i64, bytes: &[u8], align: i64) -> MyGodotResult<i64> {
 		let offset = IntoMyGodotResult::or_godot_error(offset.try_into(), &format!("param offset is out of bounds of usize (between 0 - {})", usize::MAX), 0).without_err()?;
+		if align <= 0 {
+			return Err(MyGodotError::from("Align must be greater than 0".into(), 0));
+		}
 		self.memory.write(&mut self.context.dyn_bind_mut().as_context_mut(), offset, bytes)
 			.or_godot_error("Failed to write memory", 0)?;
 		return Ok((bytes.len() as i64).next_multiple_of(align));
@@ -204,7 +207,8 @@ impl WasmMemory {
 	}
 
 	fn _read(&mut self, offset: i64, bytes: &mut [u8]) -> MyGodotResult<()> {
-		self.memory.read(&mut self.context.dyn_bind_mut().as_context_mut(), offset as usize, bytes)
+		let offset = IntoMyGodotResult::or_godot_error(offset.try_into(), &format!("param offset is out of bounds of usize (between 0 - {})", usize::MAX), ()).without_err()?;
+		self.memory.read(&mut self.context.dyn_bind_mut().as_context_mut(), offset, bytes)
 			.or_godot_error("Failed to read memory", ())?;
 		return Ok(());
 	}

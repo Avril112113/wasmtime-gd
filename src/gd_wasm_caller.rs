@@ -49,6 +49,7 @@ impl WasmCaller {
     /// If an export with the [param name] doesn't exit, [code]null[/code] is returned.
     #[func(gd_self)]
     fn get_export(gd_self: Gd<Self>, name: GString) -> Variant {
+        // TODO: Don't unwrap.
         match gd_self.clone().bind_mut().caller.clone().unwrap().borrow_mut().get_export(&name.to_string()) {
             Some(exter) => exter.to_variant(gd_self.into_dyn().upcast()),
             None => Variant::nil(),
@@ -58,6 +59,7 @@ impl WasmCaller {
     /// Get's an exported memory. If the [param name] doesn't exist or isn't a memory, [code]null[/code] is returned.
     #[func(gd_self)]
     fn get_memory(gd_self: Gd<Self>, #[opt(default="memory")] name: GString) -> Option<Gd<WasmMemory>> {
+        // TODO: Don't unwrap.
         match gd_self.clone().bind_mut().caller.clone().unwrap().borrow_mut().get_export(&name.to_string()) {
             Some(exter) => {
                 match exter {
@@ -121,6 +123,7 @@ impl WasmCaller {
 #[godot_dyn]
 impl GdAsContext for WasmCaller {
 	fn get_context(&self) -> Rc<RefCell<dyn AsContextMut<Data = StoreData>>> {
+        // TODO: Don't unwrap.
 		return self.caller.clone().unwrap();
 	}
 }

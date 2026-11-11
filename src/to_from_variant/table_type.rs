@@ -28,7 +28,7 @@ impl ToFromVariant for wasmtime::TableType {
 		let array = variant.try_to::<Array<Variant>>()?;
 
 		let array_len = array.len();
-		if array_len != 4 || array_len != 5 {
+		if array_len != 4 && array_len != 5 {
 			return Err(ConvertError::new("Expected array length of 4 or 5"));
 		}
 		

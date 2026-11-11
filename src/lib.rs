@@ -36,6 +36,8 @@ struct WasmtimeGD;
 #[gdextension]
 unsafe impl ExtensionLibrary for WasmtimeGD {
 	fn on_stage_init(stage: InitStage) {
+		// SAFETY: We assume no other threads are trying to modify the env vars during gdextension init.
+
 		if stage == InitStage::Core {
 			unsafe { std::env::set_var("RUST_BACKTRACE", "1"); }
 		}

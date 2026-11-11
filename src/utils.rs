@@ -54,10 +54,10 @@ pub trait GdAsContext {
 
 // 1. Updated Guards that own the Rc to keep it alive
 pub struct ContextGuard<'a> {
-	// Keeping the Rc inside the guard forces it to live as long as the guard does
-	_rc: Rc<RefCell<dyn AsContextMut<Data = StoreData>>>,
 	_borrow: Ref<'a, dyn AsContextMut<Data = StoreData>>,
 	context: StoreContext<'a, StoreData>,
+	// SAFETY: Rc is dropped after the borrow is dropped.
+	_rc: Rc<RefCell<dyn AsContextMut<Data = StoreData>>>,
 }
 
 impl<'a> AsContext for ContextGuard<'a> {

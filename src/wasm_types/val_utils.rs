@@ -13,8 +13,8 @@ impl ValFromVariantByValType for ValType {
 		return Ok(match self {
 			ValType::I32 => Val::I32(variant.try_to()?),
 			ValType::I64 => Val::I64(variant.try_to()?),
-			ValType::F32 => Val::F32(variant.try_to()?),
-			ValType::F64 => Val::F32(variant.try_to()?),
+			ValType::F32 => Val::F32(f32::to_bits(variant.try_to()?)),
+			ValType::F64 => Val::F64(f64::to_bits(variant.try_to::<f64>()?)),
 			ValType::V128 => todo!(),
 			ValType::Ref(ref_type) => ref_type.val_from(variant, context)?,
 		});

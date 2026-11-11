@@ -29,7 +29,7 @@ impl ToFromVariant for wasmtime::MemoryType {
 		let array = variant.try_to::<Array<Variant>>()?;
 
 		let array_len = array.len();
-		if array_len != 5 || array_len != 6 {
+		if array_len != 5 && array_len != 6 {
 			return Err(ConvertError::new("Expected array length of 5 or 6"));
 		}
 		
@@ -45,8 +45,8 @@ impl ToFromVariant for wasmtime::MemoryType {
 		let mut builder = wasmtime::MemoryTypeBuilder::default();
 		builder.memory64(array.at(1).try_to()?);
 		builder.shared(array.at(2).try_to()?);
-		builder.page_size_log2(array.at(4).try_to::<u8>()?);
-		builder.min(array.at(5).try_to::<i64>()? as u64);
+		builder.page_size_log2(array.at(3).try_to::<u8>()?);
+		builder.min(array.at(4).try_to::<i64>()? as u64);
 		builder.max(if array_len == 6 {Some(array.at(5).try_to::<i64>()? as u64)} else {None});
 		return Ok(builder.build().unwrap());
 	}

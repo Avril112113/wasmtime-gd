@@ -71,6 +71,7 @@ impl WasmModule {
 	/// [img width=16]res://addons/wasmtime-gd/warn_icon.png[/img] [b]UNSAFE, [param bytes] has minimal validation! Whoever can modify [param bytes] could get arbitrary code execution![/b]
 	#[func]
 	fn deserialize(engine: Gd<WasmEngine>, bytes: PackedByteArray) -> Option<Gd<Self>> {
+		// SAFETY: As noted in this functions comment, this is unsafe with un-trusted input. 
 		let module = unsafe { wasmtime::Module::deserialize(&engine.bind().engine, bytes.as_slice()) }
 			.or_print_error("Failed to deserialize compiled module")?;
 		return Some(Self::from_module(module));
