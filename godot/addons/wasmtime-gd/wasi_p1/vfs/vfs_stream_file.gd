@@ -51,9 +51,7 @@ class FdHandle:
 	
 	func fd_read(bytes: PackedByteArray, count: int) -> Wasip1Consts.Errno:
 		var buffer := self._entry._buffer
-		var partial := false
 		if len(buffer) < count:
-			partial = true
 			count = len(buffer)
 		bytes.append_array(buffer.slice(0, count))
 		self._entry._buffer = buffer.slice(count)

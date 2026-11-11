@@ -54,6 +54,7 @@ func get_modify_time() -> int
 @abstract
 func get_create_time() -> int
 
+## May return null to result in Errno.ENOENT
 @abstract
 func open() -> Wasip1VfsHandle
 
@@ -68,12 +69,14 @@ func _wasm_write_memory_filestat(offset: int, memory: WasmMemory) -> int:
 	  #__wasi_timestamp_t st_mtim;
 	  #__wasi_timestamp_t st_ctim;
 	#} __wasi_filestat_t;
-	offset += memory.write_u64(offset, 0)  # device_num, Not Implemented.
-	offset += memory.write_u64(offset, 0)  # inode_num, Not Implemented.
-	offset += memory.write_u8(offset, get_filetype())
-	offset += memory.write_u64(offset, 0, 8)  # link_count, Not Implemented.
-	offset += memory.write_u64(offset, get_filesize())
-	offset += memory.write_u64(offset, get_access_time())
-	offset += memory.write_u64(offset, get_modify_time())
-	offset += memory.write_u64(offset, get_create_time())
-	return offset
+	
+	var new_offset := offset
+	new_offset += memory.write_u64(offset + 0, 0)  # device_num, Not Implemented.
+	new_offset += memory.write_u64(offset + 8, 0)  # inode_num, Not Implemented.
+	new_offset += memory.write_u8(offset + 16, get_filetype())
+	new_offset += memory.write_u32(offset + 20, 0, 8)  # link_count, Not Implemented.
+	new_offset += memory.write_u64(offset + 24, get_filesize())
+	new_offset += memory.write_u64(offset + 32, get_access_time())
+	new_offset += memory.write_u64(offset + 40, get_modify_time())
+	new_offset += memory.write_u64(offset + 48, get_create_time())
+	return new_offset

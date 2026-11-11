@@ -130,7 +130,7 @@ func _init(vfs: Wasip1Vfs) -> void:
 
 ## May return [code]-99999[/code] if there was a WASM error. This is a bug!
 func main_cli() -> int:
-	var result := _instance.get_func("main_cli").call_wasm_catch([])
+	var result := _exports.main_cli()
 	if result is WasmError:
 		if result.data is WasmErrorExit:
 			return result.data.exit_code

@@ -52,8 +52,17 @@ class FdHandle:
 		return Wasip1Consts.Errno.ESUCCESS
 	
 	func fd_write(bytes: PackedByteArray) -> Wasip1Consts.Errno:
-		self._entry.bytes.append_array(bytes)
+		if self._pos == len(bytes):
+			self._entry.bytes.append_array(bytes)
+		else:
+			var right := self._entry.bytes.slice(self._pos)
+			self._entry.bytes.resize(self._pos)
+			self._entry.bytes.append_array(bytes)
+			self._entry.bytes.append_array(right)
+		
+		self._pos += len(bytes)
 		bytes.clear()
+			
 		return Wasip1Consts.Errno.ESUCCESS
 	
 	func fd_seek(offset: int, whence: Wasip1Consts.Whence) -> Array[int]:

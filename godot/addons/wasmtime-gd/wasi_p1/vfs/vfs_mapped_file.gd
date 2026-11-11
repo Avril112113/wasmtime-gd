@@ -22,7 +22,12 @@ func get_create_time() -> int:
 	return self.vfs.epoch_nsec
 
 func open() -> FdHandle:
-	return FdHandle.new(self)
+	# TODO: Rights for reading and/or writing
+	var f := FileAccess.open(_real_path, FileAccess.READ)
+	if f == null:
+		# no way to propogate the error, it's not that important anyway, it'll just be a ENOENT.
+		return null
+	return FdHandle.new(self, f)
 
 
 class FdHandle:
@@ -32,11 +37,10 @@ class FdHandle:
 	
 	var _f: FileAccess
 	
-	func _init(entry: Wasip1VfsMappedFile) -> void:
+	func _init(entry: Wasip1VfsMappedFile, f: FileAccess) -> void:
 		super._init(entry)
 		self._entry = entry
-		# TODO: Rights for reading and/or writing
-		self._f = FileAccess.open(entry._real_path, FileAccess.READ)
+		self._f = f
 	
 	func fd_read(bytes: PackedByteArray, count: int) -> Wasip1Consts.Errno:
 		bytes.append_array(self._f.get_buffer(count))

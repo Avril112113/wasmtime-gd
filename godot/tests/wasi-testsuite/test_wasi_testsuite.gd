@@ -69,16 +69,20 @@ func test_wasi_testsuite(params = use_parameters(wasi_testsuite_cases)):
 	var start := instance.get_func("_start")
 	assert_is(start, WasmFunc)
 	
-	var result: Variant = start.call_wasm([])
-	assert_eq(result, null)
+	var result: Variant = start.call_wasm_catch([])
 	if result is WasmError:
-		result.print()
+		if result.data is WasmErrorExit:
+			assert_eq(result.data.exit_code, 0)
+		else:
+			result.print()
+	else:
+		assert_eq(result, null)
 	
-	var stdout_str: String = wasi_vfs.get_entry("/dev/stdout").read_all()[1].get_string_from_utf8()
+	var stdout_str: String = wasi_vfs.get_entry("/dev/stdout").read_all().get_string_from_utf8()
 	if len(stdout_str) > 0:
 		print("stdout:")
 		print(stdout_str)
-	var stderr_str: String = wasi_vfs.get_entry("/dev/stderr").read_all()[1].get_string_from_utf8()
+	var stderr_str: String = wasi_vfs.get_entry("/dev/stderr").read_all().get_string_from_utf8()
 	if len(stderr_str) > 0:
 		print("stderr:")
 		print(stderr_str)

@@ -147,7 +147,8 @@ var _wasm_fd_fdstat_get = [
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		var descriptor := self._file_descriptors[fd]
-		descriptor._wasm_write_memory_filestat(buf_ptr, memory)
+		if descriptor._wasm_write_memory_filestat(buf_ptr, memory) == 0:
+			return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -180,7 +181,8 @@ var _wasm_fd_filestat_get = [
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		descriptor.handle.entry._wasm_write_memory_filestat(buf, memory)
+		if descriptor.handle.entry._wasm_write_memory_filestat(buf, memory) == 0:
+			return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -215,14 +217,15 @@ var _wasm_fd_prestat_get = [
 	func _wasm_fd_prestat_get(caller: WasmCaller, fd, buf):
 		if fd not in self._file_descriptors:
 			return Wasip1Consts.Errno.EBADF
+		# FIXME: This get more than pre-opens, we should only allow obtaining pre-opens.
 		var descriptor := self._file_descriptors[fd]
 		
 		var memory := caller.get_memory()
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		if descriptor._wasm_write_memory_prestat(buf, memory) <= 0:
-			return Wasip1Consts.Errno.EBADF
+		if descriptor._wasm_write_memory_prestat(buf, memory) == 0:
+			return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -239,9 +242,7 @@ var _wasm_fd_prestat_dir_name = [
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		# If the amount of bytes written <= 0, exepct if len(path_len) == 0
-		# Using `len(path_len)` works here, as the amount of bytes is always equal to or greater than the string length.
-		if descriptor._wasm_write_memory_prestat_dir_name(path, path_len, memory) < len(path_len):
+		if descriptor._wasm_write_memory_prestat_dir_name(path, path_len, memory) < 0:
 			return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
@@ -308,7 +309,7 @@ var _wasm_fd_seek = [
 			return Wasip1Consts.Errno.ENOSYS
 		
 		var result := descriptor.handle.fd_seek(offset, whence)
-		memory.write_u32(newoffset, result[1])
+		memory.write_u64(newoffset, result[1])
 		return result[0]
 ]
 
@@ -334,7 +335,7 @@ var _wasm_fd_tell = [
 			return Wasip1Consts.Errno.ENOSYS
 		
 		var result := descriptor.handle.fd_tell()
-		memory.write_u32(offset, result[1])
+		memory.write_u64(offset, result[1])
 		return result[0]
 ]
 
@@ -422,6 +423,8 @@ var _wasm_path_open = [
 				return Wasip1Consts.Errno.ENOTSUP
 			
 			var handle: Wasip1VfsHandle = entry.open()
+			if handle == null:
+				return Wasip1Consts.Errno.ENOENT
 			var file_descriptor := Wasip1VfsFileDescriptor.new(handle, path)
 			var fd := self._allocate_fd(file_descriptor)
 			memory.write_u32(fd_ptr, fd)

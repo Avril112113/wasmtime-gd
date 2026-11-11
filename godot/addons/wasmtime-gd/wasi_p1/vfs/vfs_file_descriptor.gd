@@ -21,11 +21,11 @@ func _wasm_write_memory_filestat(offset: int, memory: WasmMemory) -> int:
 	  #__wasi_rights_t fs_rights_base;
 	  #__wasi_rights_t fs_rights_inheriting;
 	#} __wasi_fdstat_t;
-	offset += memory.write_u8(offset, self.handle.entry.get_filetype())
-	offset += memory.write_u16(offset, self.flags)
-	offset += memory.write_u64(offset, self.rights)
-	offset += memory.write_u64(offset, self.rights_inheriting)
-	return offset
+	if memory.write_u8(offset + 0, self.handle.entry.get_filetype()) == 0: return 0
+	if memory.write_u16(offset + 2, self.flags) == 0: return 0
+	if memory.write_u64(offset + 8, self.rights) == 0: return 0
+	if memory.write_u64(offset + 16, self.rights_inheriting) == 0: return 0
+	return 24
 
 func _wasm_write_memory_prestat(offset: int, memory: WasmMemory) -> int:
 	#typedef struct __wasi_prestat_dir_t {
@@ -47,12 +47,12 @@ func _wasm_write_memory_prestat(offset: int, memory: WasmMemory) -> int:
 		preopen_type = 0
 	else:
 		return 0
-	offset += memory.write_u8(offset, preopen_type)
-	offset += memory.write_u32(offset, self.path.length())
-	return offset
+	if memory.write_u8(offset + 0, preopen_type) == 0: return 0
+	if memory.write_u32(offset + 4, len(self.path.to_utf8_buffer())): return 0
+	return 8
 
 func _wasm_write_memory_prestat_dir_name(path_ptr: int, path_len: int, memory: WasmMemory) -> int:
 	var bytes := self.path.to_utf8_buffer()
-	if len(bytes) < path_len:
+	if len(bytes) > path_len:
 		return 0
 	return memory.write(path_ptr, bytes)
