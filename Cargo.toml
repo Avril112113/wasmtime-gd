@@ -10,9 +10,7 @@ crate-type = ["cdylib"]
 anyhow = "1.0.104"
 godot = { version="0.5.5", features = ["api-4-5", "register-docs", "experimental-threads"] }
 wasmtime = { version="50.0.1", features = ["anyhow", "backtrace"] }
-wasmtime-wasi = { version="50.0.1", default-features = false, features = ["p1"]}
 fragile = "3.0.0"
-strum = { version = "0.28", features = ["derive"] }
 scopeguard = "1.2.0"
 gimli = "0.34.0"
 wasmparser = "0.263.0"
