@@ -45,8 +45,6 @@ unsafe impl ExtensionLibrary for WasmtimeGD {
 		if stage == InitStage::Scene {
 			#[cfg(debug_assertions)]
 			godot_print!("Using debug build of wasmtime-gd, performance will be impacted.");
-			
-			unsafe { std::env::set_var("RUST_BACKTRACE", "1"); }
 		}
 	}
 }

@@ -68,9 +68,10 @@ impl<'a> AsContext for ContextGuard<'a> {
 }
 
 pub struct ContextGuardMut<'a> {
-	_rc: Rc<RefCell<dyn AsContextMut<Data = StoreData>>>,
 	_borrow: RefMut<'a, dyn AsContextMut<Data = StoreData>>,
 	context: StoreContextMut<'a, StoreData>,
+	// SAFETY: Rc is dropped after the borrow is dropped.
+	_rc: Rc<RefCell<dyn AsContextMut<Data = StoreData>>>,
 }
 
 impl<'a> AsContext for ContextGuardMut<'a> {
