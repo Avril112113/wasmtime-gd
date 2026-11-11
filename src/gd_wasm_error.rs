@@ -127,23 +127,34 @@ impl WasmError {
 	#[func]
 	pub fn as_string(&self) -> String {
 		if let Some(error) = self.error.as_ref() {
-			let mut prefix = "Something";
+			let prefix;
 			if let Some(_) = error.downcast_ref::<WasmGodotError>() {
 				prefix = "Godot";
 			} else if let Some(_) = error.downcast_ref::<WasmAnyError>() {
 				prefix = "wasmtime-gd";
 			} else if let Some(_) = error.downcast_ref::<ThrownException>() {
-				prefix = "WASM";
+				prefix = "WASM Exn";
+			} else if let Some(_) = error.downcast_ref::<wasmtime::Trap>() {
+				prefix = "WASM Trap";
+			} else {
+				prefix = "Something";
 			}
+
+			let msg = error
+				.chain()
+				.map(|e| e.to_string())
+				.collect::<Vec<_>>()
+				.join("\n");
+
 			if INCLUDE_RUST_BACKTRACE.load(std::sync::atomic::Ordering::Relaxed) {
 				let rust_backtrace = error.backtrace().to_string()
 					.lines()
 					.filter(|line| line.contains("wasmtime_gd"))
 					.collect::<Vec<&str>>()
 					.join("\n");
-				return format!("{} returned an error:\n{}\nRust Backtrace:\n{}", prefix, error, rust_backtrace);
+				return format!("{} returned an error:\n{}\nRust Backtrace:\n{}", prefix, msg, rust_backtrace);
 			} else {
-				return format!("{} returned an error:\n{}", prefix, error);
+				return format!("{} returned an error:\n{}", prefix, msg);
 			}
 		}
 		return "Attempt to print WasmError which has already been taken.".to_string();
