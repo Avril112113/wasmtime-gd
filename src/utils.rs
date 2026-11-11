@@ -1,10 +1,9 @@
-use std::{cell::{Cell, Ref, RefCell, RefMut}, ops::{Deref, DerefMut}, rc::Rc, thread::{self, ThreadId}};
-
-use godot::prelude::*;
+use std::{cell::{Ref, RefCell, RefMut}, ops::{Deref, DerefMut}, rc::Rc};
 
 use wasmtime::{AsContext, AsContextMut, StoreContext, StoreContextMut};
 
-use crate::{store_data::StoreData, utils_errors::{MyGodotError, MyGodotResult}};
+use crate::store_data::StoreData;
+
 
 pub trait GdAsContext {
 	fn get_context(&self) -> Rc<RefCell<dyn AsContextMut<Data = StoreData>>>;
@@ -111,62 +110,3 @@ impl<'a> DerefMut for ContextGuardMut<'a> {
 		&mut self.context
 	}
 }
-
-
-#[derive(Debug, Default)]
-pub struct ReentrancyState {
-	owner: Cell<Option<ThreadId>>,
-	depth: Cell<usize>,
-}
-
-pub struct ReentrancyGuard<'a> {
-	state: &'a ReentrancyState,
-}
-
-impl ReentrancyState {
-	pub fn try_lock(&self) -> Result<ReentrancyGuard<'_>, ThreadId> {
-		let current = thread::current().id();
-
-		match self.owner.get() {
-			Some(owner) if owner == current => {
-				self.depth.set(self.depth.get() + 1);
-				Ok(ReentrancyGuard { state: self })
-			}
-			Some(owner) => Err(owner),
-			None => {
-				self.owner.set(Some(current));
-				self.depth.set(1);
-				Ok(ReentrancyGuard { state: self })
-			}
-		}
-	}
-
-	pub fn try_lock_from_state_ptr<'a>(ptr: *mut dyn AsContextMut<Data = StoreData>) -> MyGodotResult<ReentrancyGuard<'a>, MyGodotError<Variant>> {
-		return unsafe {
-			(*ptr).as_context().data().reentrancy.try_lock()
-		}.map_err(|owner| {
-			MyGodotError::from(
-				format!(
-					"Attempt to call WasmFunc on thread {:?} while another call is active on thread {:?}",
-					thread::current().id().as_u64(),
-					owner.as_u64()
-				),
-				Variant::nil()
-			)
-		});
-	}
-}
-
-impl Drop for ReentrancyGuard<'_> {
-	fn drop(&mut self) {
-		let depth = self.state.depth.get();
-
-		if depth <= 1 {
-			self.state.depth.set(0);
-			self.state.owner.set(None);
-		} else {
-			self.state.depth.set(depth - 1);
-		}
-	}
-}
-

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![feature(fn_traits)]
 #![feature(int_roundings)]
+#![feature(current_thread_id)]
 #![feature(thread_id_value)]
 
 mod gd_script_stuff;

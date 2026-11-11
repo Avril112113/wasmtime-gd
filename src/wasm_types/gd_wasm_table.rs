@@ -4,13 +4,6 @@ use crate::{store_same_as::ContextStoreSameAs, to_from_variant::ToFromVariant, u
 use super::WasmAsExtern;
 
 
-// #[derive(Clone)]
-// struct SendCallable(Callable);
-//
-// unsafe impl Send for SendCallable {}
-// unsafe impl Sync for SendCallable {}
-
-
 /// A Wasmtime Extern::Table
 /// 
 /// Note: A simple `==` between [WasmTable] is not enough.

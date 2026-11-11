@@ -1,15 +1,16 @@
-use godot::prelude::*;
-use wasmtime::AsContextMut;
 
-use crate::{gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, store_data::StoreData, to_from_variant::ToFromVariant, utils::{GdAsContext, ReentrancyState}, utils_errors::*, wasm_types::*};
+use std::{cell::RefCell, collections::{HashMap, hash_map}, sync::{LazyLock, Mutex}, thread::{self, ThreadId}};
+
+use godot::prelude::*;
+
+use crate::{gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
 use super::WasmAsExtern;
 
 
-// #[derive(Clone)]
-// struct SendCallable(Callable);
-//
-// unsafe impl Send for SendCallable {}
-// unsafe impl Sync for SendCallable {}
+thread_local! {
+	pub(crate) static ACTIVE_CALLERS: RefCell<Vec<DynGd<RefCounted, dyn GdAsContext>>> = RefCell::new(Vec::new());
+}
+static ACTIVE_CALL_THREADS: Mutex<LazyLock<HashMap<InstanceId, ThreadId>>> = Mutex::new(LazyLock::new(|| HashMap::new()));
 
 
 /// A Wasmtime Extern::Func
@@ -54,7 +55,6 @@ impl WasmFunc {
 		let gd_context: DynGd<RefCounted, _> = context.clone();
 		
 		let callable = fragile::Fragile::new(callable);
-		// let callable = SendCallable(callable);
 
   		let engine = &mut context.dyn_bind_mut().as_context_mut().engine().clone();
 		
@@ -93,7 +93,9 @@ impl WasmFunc {
 
 				// transmute to 'static
 				let gd_caller = unsafe { WasmCaller::new_from(std::mem::transmute(caller)) };
+				ACTIVE_CALLERS.with_borrow_mut(|callers| { callers.push(gd_caller.clone().into_dyn().upcast()); });
 				let _guard = scopeguard::guard((), |_| {
+					ACTIVE_CALLERS.with_borrow_mut(|callers| { callers.pop().unwrap() });
 					gd_caller.clone().bind_mut().invalidate();
 				});
 				
@@ -105,7 +107,6 @@ impl WasmFunc {
 					// Adding the `callable` to the msg does provide additional info, like it's name if it has one.
 					return Err(wasmtime::Error::msg(format!("Callable is invalid! ({})", callable)));
 				}
-				// let result = callable.clone().0.call(&varags);
 				let result = callable.call(&varargs);
 
 				if let Ok(mut err) = result.try_to::<Gd<WasmError>>() {
@@ -158,22 +159,28 @@ impl WasmFunc {
 		return Array::from_iter(self.func.ty(context).results().map(|ty| ty.to_variant()));
 	}
 
-	fn store_ptr_for_call(&mut self) -> Result<*mut dyn AsContextMut<Data = StoreData>, MyGodotError<Variant>> {
-		let ctx = self.context.dyn_bind_mut().get_context();
-
-		// This is the real no-double-borrow check.
-		let mut store_borrow = ctx.borrow_mut();
-		let _ = store_borrow.as_context_mut();
-
-		let ptr = ctx.clone().as_ptr();
-		drop(store_borrow);
-		drop(ctx);
-
-		Ok(ptr)
-	}
-
 	fn call_wasm_internal(&mut self, args: Array<Variant>) -> Result<wasmtime::Result<Vec<wasmtime::Val>>, MyGodotError<Variant>> {
-		let ctx = self.context.dyn_bind_mut();
+		// TODO: If this func belongs to a different store than the current caller, this fails.
+
+		let mut ctx_gd = ACTIVE_CALLERS.with_borrow(|callers| {
+			if callers.len() > 0 {
+				return callers[callers.len() - 1].clone();
+			}
+			return self.context.clone();
+		});
+		let instance_id = ctx_gd.instance_id();
+		match ACTIVE_CALL_THREADS.lock().unwrap().entry(instance_id) {
+			hash_map::Entry::Vacant(entry) => {
+				entry.insert(thread::current_id());
+				Ok(())
+			},
+			hash_map::Entry::Occupied(entry) =>
+				Err(MyGodotError::from(format!("Attempt to access context on thread #{} while it's currently used by thread #{}", thread::current_id().as_u64(), entry.get().as_u64()), Variant::nil())),
+		}?;
+		let _guard = scopeguard::guard((), |_| {
+			assert_eq!(ACTIVE_CALL_THREADS.lock().unwrap().remove(&instance_id), Some(thread::current_id()));
+		});
+		let ctx = ctx_gd.dyn_bind_mut();
 		
 		let func_type = self.func.ty(ctx.as_context_mut());
 		let param_types = func_type.params();
@@ -196,23 +203,7 @@ impl WasmFunc {
 			};
 		}).collect::<Vec<wasmtime::Val>>();
 
-		// Comment from AI-assisted verification;
-		// We intentionally drop the RefCell borrow before re-entering the same Wasmtime store so
-		// the store can be re-entered on the same thread without violating Rust aliasing rules.
-		// The reentrancy guard only enforces the thread policy; the raw pointer path is
-		// only valid if no store borrow is live.
-
-		drop(ctx);
-
-		let ctx_ptr = self.store_ptr_for_call()?;
-
-		let guard = ReentrancyState::try_lock_from_state_ptr(ctx_ptr)?;
-
-		let result = self.func.call(unsafe { &mut *ctx_ptr }.as_context_mut(), params.as_slice(), results.as_mut_slice());
-
-		drop(guard);
-
-		return Ok(result.map(|()| results));
+		return Ok(self.func.call(ctx.as_context_mut(), params.as_slice(), results.as_mut_slice()).map(|()| results));
 	}
 
 	// https://github.com/godot-rust/gdext/issues/1472
