@@ -4,7 +4,7 @@ use godot::{classes::class_macros::sys::is_editor, prelude::*};
 use wasmtime::{AsContextMut, Caller};
 
 use crate::{
-    gd_script_stuff::GDScriptStuff, store_data::StoreData, to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}, wasm_types::gd_wasm_memory::WasmMemory
+    gd_script_stuff::GDScriptStuff, gd_wasm_error::WasmError, store_data::StoreData, to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}, wasm_types::{gd_wasm_exn_ref::WasmExnRef, gd_wasm_memory::WasmMemory}
 };
 
 
@@ -90,6 +90,31 @@ impl WasmCaller {
 		return self.as_context_mut().set_fuel(fuel as u64)
 			.map(|()| true)
 			.or_godot_error("Failed to set fuel", false);
+	}
+
+	/// Take the pending WASM exception after a [WasmError] holding a thrown exception. See [method WasmError.is_throw_exception] [br]
+    /// Returns `null` if there is no pending WASM exception.
+	#[func(gd_self)]
+	fn take_pending_exception(gd_self: Gd<Self>) -> Option<Gd<WasmExnRef>> {
+		if let Some(exn_ref) = gd_self.clone().bind_mut().as_context_mut().take_pending_exception() {
+			return Some(WasmExnRef::new_from(exn_ref, gd_self.into_dyn().upcast()));
+		}
+		return None;
+	}
+
+    /// Set an exception as the currently pending exception, and return an error that propagates the throw. [br]
+    ///
+    /// This method takes an exception object and stores it in the `Store` as the currently pending exception. [br]
+    /// This is a special rooted slot that holds the exception as long as it is propagating. [br]
+    /// This method then returns a [WasmError] holding a thrown exception, which is a special case that indicates a pending exception exists. [br]
+    /// When this [WasmError] propagates as an error returned from a Wasm-to-host call, the pending exception is thrown within the Wasm context, and either caught or propagated further to the host-to-Wasm call boundary. [br]
+    /// If an exception is thrown out of Wasm (or across Wasm from a hostcall) back to the host-to-Wasm call boundary, *that* invocation returns a `ThrownException`, and the pending exception slot is again set. [br]
+    /// In other words, a [WasmError] holding a thrown exception should propagate upward exactly and only when a pending exception is set. [br]
+    /// [br]
+    /// If there is already a pending exception in the store then the previous one will be overwritten.
+	#[func]
+	fn throw(&mut self, mut exn_ref: Gd<WasmExnRef>) -> Gd<WasmError> {
+        return WasmError::new_from_error(self.as_context_mut().throw::<()>(exn_ref.bind_mut().exn_ref).unwrap_err());
 	}
 }
 

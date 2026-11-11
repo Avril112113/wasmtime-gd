@@ -10,3 +10,4 @@ pub mod gd_wasm_func;
 pub mod gd_wasm_memory;
 pub mod gd_wasm_table;
 pub mod gd_wasm_tag;
+pub mod gd_wasm_exn_ref;

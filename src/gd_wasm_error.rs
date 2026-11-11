@@ -1,6 +1,7 @@
 use std::sync::atomic::AtomicBool;
 
 use godot::{meta::AsArg, prelude::*};
+use wasmtime::ThrownException;
 
 use crate::{gd_script_stuff::GDScriptStuff, thread_safe_variant::ThreadVariant};
 
@@ -108,6 +109,11 @@ impl WasmError {
 		return self.error.is_none();
 	}
 
+	#[func]
+	fn is_throw_exception(&self) -> bool {
+		return self.error.as_ref().is_some_and(|e| e.downcast_ref::<ThrownException>().is_some());
+	}
+
 	/// The value which was given to [member new_from]. [br]
 	/// If the error wasn't created with [member new_from], this will be [code]null[/code].
 	#[func]
@@ -126,6 +132,8 @@ impl WasmError {
 				prefix = "Godot";
 			} else if let Some(_) = error.downcast_ref::<WasmAnyError>() {
 				prefix = "wasmtime-gd";
+			} else if let Some(_) = error.downcast_ref::<ThrownException>() {
+				prefix = "WASM";
 			}
 			if INCLUDE_RUST_BACKTRACE.load(std::sync::atomic::Ordering::Relaxed) {
 				let rust_backtrace = error.backtrace().to_string()

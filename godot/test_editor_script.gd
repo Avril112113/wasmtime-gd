@@ -68,9 +68,10 @@ func _run() -> void:
 			#if result is WasmError:
 				#result.print()
 			
-			box._exports.lua_pushinteger(lua_state_ptr, 112233)
-				
-			return 1
+			#box._exports.lua_pushinteger(lua_state_ptr, 112233)
+			#return 1
+
+			return box._exports.lua_error(lua_state_ptr)
 	)
 	box._exports.lua_pushcclosure(global_state_ptr, my_gd_fn_ptr, 0)
 	
