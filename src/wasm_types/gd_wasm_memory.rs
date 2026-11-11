@@ -149,49 +149,56 @@ impl WasmMemory {
 	}
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
-	/// Returns the amount of bytes written, or the next multiple of [param align] if provided.
+	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
+	/// Size: 1 byte
 	#[func]
 	fn write_i8(&mut self, offset: i64, value: i8, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		return self._write(offset, &value.to_le_bytes(), align);
 	}
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
-	/// Returns the amount of bytes written, or the next multiple of [param align] if provided.
+	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
+	/// Size: 1 byte
 	#[func]
 	fn write_u8(&mut self, offset: i64, value: u8, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		return self._write(offset, &value.to_le_bytes(), align);
 	}
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
-	/// Returns the amount of bytes written, or the next multiple of [param align] if provided.
+	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
+	/// Size: 2 bytes
 	#[func]
 	fn write_i16(&mut self, offset: i64, value: i16, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		return self._write(offset, &value.to_le_bytes(), align);
 	}
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
-	/// Returns the amount of bytes written, or the next multiple of [param align] if provided.
+	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
+	/// Size: 2 bytes
 	#[func]
 	fn write_u16(&mut self, offset: i64, value: u16, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		return self._write(offset, &value.to_le_bytes(), align);
 	}
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
-	/// Returns the amount of bytes written, or the next multiple of [param align] if provided.
+	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
+	/// Size: 4 bytes
 	#[func]
 	fn write_i32(&mut self, offset: i64, value: i32, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		return self._write(offset, &value.to_le_bytes(), align);
 	}
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
-	/// Returns the amount of bytes written, or the next multiple of [param align] if provided.
+	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
+	/// Size: 4 bytes
 	#[func]
 	fn write_u32(&mut self, offset: i64, value: u32, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		return self._write(offset, &value.to_le_bytes(), align);
 	}
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
-	/// Returns the amount of bytes written, or the next multiple of [param align] if provided.
+	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
+	/// Size: 8 bytes
 	#[func]
 	fn write_i64(&mut self, offset: i64, value: i64, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		return self._write(offset, &value.to_le_bytes(), align);
@@ -199,7 +206,8 @@ impl WasmMemory {
 
 	/// Safely writes [param value] to this memory at the given offset. [br]
 	/// Returns the amount of bytes written, or the next multiple of [param align] if provided. [br]
-	/// NOTE: Godot numbers can't represent a u64, max value is i64.
+	/// NOTE: Godot numbers can't represent a u64, max value is i64. [br]
+	/// Size: 8 bytes
 	#[func]
 	fn write_u64(&mut self, offset: i64, value: i64, #[opt(default = 1)] align: i64) -> MyGodotResult<i64> {
 		let value: u64 = IntoMyGodotResult::or_godot_error(value.try_into(), &format!("param value is out of bounds of u64 (between 0 - {})", u64::MAX), 0).without_err()?;
@@ -223,7 +231,8 @@ impl WasmMemory {
 		return Ok(bytes);
 	}
 
-	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// Size: 1 byte
 	#[func]
 	fn read_i8(&mut self, offset: i64) -> MyGodotResult<i8> {
 		let mut bytes = vec![0; size_of::<i8>()];
@@ -231,7 +240,8 @@ impl WasmMemory {
 		return Ok(i8::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
-	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// Size: 1 byte
 	#[func]
 	fn read_u8(&mut self, offset: i64) -> MyGodotResult<u8> {
 		let mut bytes = vec![0; size_of::<u8>()];
@@ -239,7 +249,8 @@ impl WasmMemory {
 		return Ok(u8::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
-	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// Size: 2 bytes
 	#[func]
 	fn read_i16(&mut self, offset: i64) -> MyGodotResult<i16> {
 		let mut bytes = vec![0; size_of::<i16>()];
@@ -247,7 +258,8 @@ impl WasmMemory {
 		return Ok(i16::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
-	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// Size: 2 bytes
 	#[func]
 	fn read_u16(&mut self, offset: i64) -> MyGodotResult<u16> {
 		let mut bytes = vec![0; size_of::<u16>()];
@@ -255,7 +267,8 @@ impl WasmMemory {
 		return Ok(u16::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
-	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// Size: 4 bytes
 	#[func]
 	fn read_i32(&mut self, offset: i64) -> MyGodotResult<i32> {
 		let mut bytes = vec![0; size_of::<i32>()];
@@ -263,7 +276,8 @@ impl WasmMemory {
 		return Ok(i32::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
-	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// Size: 4 bytes
 	#[func]
 	fn read_u32(&mut self, offset: i64) -> MyGodotResult<u32> {
 		let mut bytes = vec![0; size_of::<u32>()];
@@ -271,12 +285,23 @@ impl WasmMemory {
 		return Ok(u32::from_le_bytes(bytes.as_slice().try_into().unwrap()));
 	}
 
-	/// Returns value at [param offset], or [code]0[/code] if an error occurred.
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// Size: 8 bytes
 	#[func]
 	fn read_i64(&mut self, offset: i64) -> MyGodotResult<i64> {
 		let mut bytes = vec![0; size_of::<i64>()];
 		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
 		return Ok(i64::from_le_bytes(bytes.as_slice().try_into().unwrap()));
+	}
+
+	/// Returns value at [param offset], or [code]0[/code] if an error occurred. [br]
+	/// NOTE: Godot numbers can't represent a u64, max value is i64. [br]
+	/// Size: 8 bytes
+	#[func]
+	fn read_u64(&mut self, offset: i64) -> MyGodotResult<i64> {
+		let mut bytes = vec![0; size_of::<u64>()];
+		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
+		return Ok(i64::try_from(u64::from_le_bytes(bytes.as_slice().try_into().unwrap())).or_godot_error("u64 value was larger than a i64's positive section, which godot can't represent.", 0)?);
 	}
 
 	/// Check if 2 [WasmMemory]s are actually the same memory.
