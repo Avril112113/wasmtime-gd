@@ -67,8 +67,8 @@ var _wasm_args_get = [
 		var memory: WasmMemory = caller.get_export("memory")
 		for i in range(len(arguments)):
 			var offset = _raw_arguments_offsets[i]
-			memory.write_i32(argv + i*4, argv_buf + offset)
-		memory.write(argv_buf, _raw_arguments)
+			if memory.write_i32(argv + i*4, argv_buf + offset) != 4: return Wasip1Consts.Errno.EINVAL
+		if memory.write(argv_buf, _raw_arguments) != len(_raw_arguments): return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -78,8 +78,8 @@ var _wasm_args_sizes_get = [
 	[WasmTypes.I32],
 	func _wasm_args_sizes_get(caller: WasmCaller, argc: int, argv_buf_size: int) -> int:
 		var memory: WasmMemory = caller.get_export("memory")
-		memory.write_i32(argc, len(arguments))
-		memory.write_i32(argv_buf_size, len(_raw_arguments))
+		if memory.write_i32(argc, len(arguments)) != 4: return Wasip1Consts.Errno.EINVAL
+		if memory.write_i32(argv_buf_size, len(_raw_arguments)) != 4: return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -91,8 +91,8 @@ var _wasm_environ_get = [
 		var memory: WasmMemory = caller.get_export("memory")
 		for i in range(len(environ)):
 			var offset = _raw_environ_offsets[i]
-			memory.write_i32(argv + i*4, argv_buf + offset)
-		memory.write(argv_buf, _raw_environ)
+			if memory.write_i32(argv + i*4, argv_buf + offset) != 4: return Wasip1Consts.Errno.EINVAL
+		if memory.write(argv_buf, _raw_environ) != len(_raw_environ): return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -102,14 +102,14 @@ var _wasm_environ_sizes_get = [
 	[WasmTypes.I32],
 	func _wasm_environ_sizes_get(caller: WasmCaller, argc: int, argv_buf_size: int) -> int:
 		var memory: WasmMemory = caller.get_export("memory")
-		memory.write_i32(argc, len(environ))
-		memory.write_i32(argv_buf_size, len(_raw_environ))
+		if memory.write_i32(argc, len(environ)) != 4: return Wasip1Consts.Errno.EINVAL
+		if memory.write_i32(argv_buf_size, len(_raw_environ)) != 4: return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
 var _wasm_proc_exit = [
 	[WasmTypes.I32],
 	[],
-	func _wasm_environ_sizes_get(caller: WasmCaller, code: int) -> WasmError:
+	func _wasm_proc_exit(caller: WasmCaller, code: int) -> WasmError:
 		return WasmErrorExit.new_error(code)
 ]

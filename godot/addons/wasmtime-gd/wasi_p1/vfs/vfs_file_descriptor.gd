@@ -42,9 +42,17 @@ func _wasm_write_memory_prestat(offset: int, memory: WasmMemory) -> int:
 	  #uint8_t tag;
 	  #__wasi_prestat_u_t u;
 	#} __wasi_prestat_t;
-	offset += memory.write_u8(offset, 0 if self.handle.entry.get_filetype() == Wasip1Consts.FileType.DIRECTORY else 255)
+	var preopen_type
+	if self.handle.entry.get_filetype() == Wasip1Consts.FileType.DIRECTORY:
+		preopen_type = 0
+	else:
+		return 0
+	offset += memory.write_u8(offset, preopen_type)
 	offset += memory.write_u32(offset, self.path.length())
 	return offset
 
 func _wasm_write_memory_prestat_dir_name(path_ptr: int, path_len: int, memory: WasmMemory) -> int:
-	return memory.write(path_ptr, self.path.substr(0, path_len).to_utf8_buffer())
+	var bytes := self.path.to_utf8_buffer()
+	if len(bytes) < path_len:
+		return 0
+	return memory.write(path_ptr, bytes)

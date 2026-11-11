@@ -52,7 +52,6 @@ class FdHandle:
 		match whence:
 			Wasip1Consts.Whence.CUR:
 				self._f.seek(self._f.get_position() + offset)
-				self._pos = clampi(self._pos + offset, 0, len(self._entry.bytes))
 				return [Wasip1Consts.Errno.ESUCCESS, self._f.get_position()]
 			Wasip1Consts.Whence.SET:
 				self._f.seek(offset)

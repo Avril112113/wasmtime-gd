@@ -50,9 +50,9 @@ func _run() -> void:
 	var stderr: Wasip1VfsStreamFile = vfs.get_entry("/dev/stderr")
 	prints("/dev/stdout", stdout.get_filesize())
 	if stdout.get_filesize() > 0:
-		print(stdout.read_all()[1].get_string_from_utf8())
+		print(stdout.read_all().get_string_from_utf8())
 	prints("/dev/stderr", stderr.get_filesize())
 	if stderr.get_filesize() > 0:
-		print(stderr.read_all()[1].get_string_from_utf8())
+		print(stderr.read_all().get_string_from_utf8())
 	
 	print("~~~~~")

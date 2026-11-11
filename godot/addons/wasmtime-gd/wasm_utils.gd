@@ -55,7 +55,7 @@ static func write_iovs(memory: WasmMemory, iovs: int, iovs_len: int, bytes: Pack
 		
 		var write_count := min(len(bytes) - bytes_pos, buf_len)
 		bytes_pos += write_count
-		if memory.write(buf_ptr, bytes.slice(bytes_pos-write_count, bytes_pos)) == 0:
+		if memory.write(buf_ptr, bytes.slice(bytes_pos-write_count, bytes_pos)) != write_count:
 			break
 		if bytes_pos >= len(bytes):
 			break

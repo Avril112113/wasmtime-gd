@@ -39,16 +39,15 @@ func get_child(path: String) -> Variant:
 			return child
 	return Wasip1Consts.Errno.ENOENT
 
-## Returns `true` if added, otherwise `false` if it failed.
 func add_child(name: String, entry: Wasip1VfsEntryBase) -> bool:
 	self._access_time = self.vfs._clock.now_nsec
 	if name in self._children:
-		return Wasip1Consts.Errno.EEXIST
+		return false
 		
 	self._modify_time = self.vfs._clock.now_nsec
 	entry.parent = self
 	self._children[name] = entry
-	return Wasip1Consts.Errno.ESUCCESS
+	return true
 
 func open() -> FdHandle:
 	return FdHandle.new(self)

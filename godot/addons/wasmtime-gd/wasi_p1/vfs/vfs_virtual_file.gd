@@ -47,7 +47,7 @@ class FdHandle:
 		self._entry = entry
 	
 	func fd_read(bytes: PackedByteArray, count: int) -> Wasip1Consts.Errno:
-		bytes.append_array(self._entry.bytes.slice(self._pos, self._pos + count))
+		bytes.append_array(self._entry.bytes.slice(max(self._pos, 0), max(self._pos + count, 0)))
 		self._pos = self._pos + len(bytes)
 		return Wasip1Consts.Errno.ESUCCESS
 	
@@ -59,13 +59,13 @@ class FdHandle:
 	func fd_seek(offset: int, whence: Wasip1Consts.Whence) -> Array[int]:
 		match whence:
 			Wasip1Consts.Whence.CUR:
-				self._pos = clampi(self._pos + offset, 0, len(self._entry.bytes))
+				self._pos = self._pos + offset
 				return [Wasip1Consts.Errno.ESUCCESS, self._pos]
 			Wasip1Consts.Whence.SET:
-				self._pos = clampi(offset, 0, len(self._entry.bytes))
+				self._pos = offset
 				return [Wasip1Consts.Errno.ESUCCESS, self._pos]
 			Wasip1Consts.Whence.END:
-				self._pos = clampi(len(self._entry.bytes) + offset, 0, len(self._entry.bytes))
+				self._pos = len(self._entry.bytes) + offset
 				return [Wasip1Consts.Errno.ESUCCESS, self._pos]
 		return [Wasip1Consts.Errno.EINVAL, self._pos]
 

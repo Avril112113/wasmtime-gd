@@ -36,7 +36,7 @@ func define_feature(linker: WasmLinker, store: WasmStore) -> bool:
 var _wasm_clock_res_get = [
 	[WasmTypes.I32, WasmTypes.I32],
 	[WasmTypes.I32],
-	func _wasm_args_get(caller: WasmCaller, clock_id: int, precision: int) -> int:
+	func _wasm_clock_res_get(caller: WasmCaller, clock_id: int, precision: int) -> int:
 		var memory: WasmMemory = caller.get_export("memory")
 		if clock_id == Wasip1Consts.Clock.REALTIME:
 			# get_unix_time_from_system is micro-sec accuracy
@@ -53,7 +53,7 @@ var _wasm_clock_res_get = [
 var _wasm_clock_time_get = [
 	[WasmTypes.I32, WasmTypes.I64, WasmTypes.I32],
 	[WasmTypes.I32],
-	func _wasm_args_get(caller: WasmCaller, clock_id: int, precision: int, time_nsec: int) -> int:
+	func _wasm_clock_time_get(caller: WasmCaller, clock_id: int, precision: int, time_nsec: int) -> int:
 		var memory: WasmMemory = caller.get_export("memory")
 		if clock_id == Wasip1Consts.Clock.REALTIME:
 			memory.write_u64(time_nsec, now_nsec)

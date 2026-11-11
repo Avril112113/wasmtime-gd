@@ -36,8 +36,6 @@ func get_entry(path: String) -> Variant:
 ## Returns [Wasip1VfsHandle] or [enum Wasip1Consts.Errno] in the case of failure.
 func open_fd(path: String, fd: int = -1) -> Variant:
 	var entry := self.get_entry(path)
-	if entry is not Wasip1VfsEntryBase:
-		return entry
 	
 	if entry is Wasip1VfsEntryBase:
 		var handle: Variant = entry.open()
@@ -223,7 +221,8 @@ var _wasm_fd_prestat_get = [
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		descriptor._wasm_write_memory_prestat(buf, memory)
+		if descriptor._wasm_write_memory_prestat(buf, memory) <= 0:
+			return Wasip1Consts.Errno.EBADF
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -240,7 +239,10 @@ var _wasm_fd_prestat_dir_name = [
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		descriptor._wasm_write_memory_prestat_dir_name(path, path_len, memory)
+		# If the amount of bytes written <= 0, exepct if len(path_len) == 0
+		# Using `len(path_len)` works here, as the amount of bytes is always equal to or greater than the string length.
+		if descriptor._wasm_write_memory_prestat_dir_name(path, path_len, memory) < len(path_len):
+			return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
 
@@ -352,6 +354,7 @@ var _wasm_fd_write = [
 		var bytes := WasmUtils.read_iovs(memory, iovs, iovs_len)
 		var bytes_count := len(bytes)
 		var errno := descriptor.handle.fd_write(bytes)
+		# Writing the nwritten in the case where errno != OK is undefined. We write it anyway.
 		memory.write_u32(nwritten, bytes_count - len(bytes))
 		return errno
 ]
@@ -412,11 +415,11 @@ var _wasm_path_open = [
 				return Wasip1Consts.Errno.ENOTDIR
 			
 			if (o_flags & Wasip1Consts.OFlags.CREAT) != 0:
-				return WasmError.new_from("Not Implemented Yet: OFlags.CREAT")
+				return Wasip1Consts.Errno.ENOTSUP
 			if (o_flags & Wasip1Consts.OFlags.EXCL) != 0:
-				return WasmError.new_from("Not Implemented Yet: OFlags.EXCL")
+				return Wasip1Consts.Errno.ENOTSUP
 			if (o_flags & Wasip1Consts.OFlags.TRUNC) != 0:
-				return WasmError.new_from("Not Implemented Yet: OFlags.TRUNC")
+				return Wasip1Consts.Errno.ENOTSUP
 			
 			var handle: Wasip1VfsHandle = entry.open()
 			var file_descriptor := Wasip1VfsFileDescriptor.new(handle, path)

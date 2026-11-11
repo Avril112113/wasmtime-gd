@@ -28,7 +28,10 @@ func get_child(path: String) -> Variant:
 	if not (child_path.begins_with(self._real_path) and child_path.substr(len(self._real_path), 1) == "/"):
 		return Wasip1Consts.Errno.ENOENT
 	if child_path in self._children:
-		return self._children[child_path].get_ref()
+		var child := self._children[child_path].get_ref()
+		if child != null:
+			return child
+		self._children.erase(child_path)
 	if DirAccess.dir_exists_absolute(child_path):
 		var child := Wasip1VfsMappedDirectory.new(self.vfs, child_path, self._children)
 		self._children[child_path] = weakref(child)
