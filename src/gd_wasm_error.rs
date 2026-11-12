@@ -132,18 +132,18 @@ impl WasmError {
 	#[func]
 	pub fn as_string(&self) -> String {
 		if let Some(error) = self.error.as_ref() {
-			let prefix;
-			if let Some(_) = error.downcast_ref::<WasmGodotError>() {
-				prefix = "Godot";
-			} else if let Some(_) = error.downcast_ref::<WasmAnyError>() {
-				prefix = "wasmtime-gd";
-			} else if let Some(_) = error.downcast_ref::<ThrownException>() {
-				prefix = "WASM Exn";
-			} else if let Some(_) = error.downcast_ref::<wasmtime::Trap>() {
-				prefix = "WASM Trap";
-			} else {
-				prefix = "Something";
-			}
+			let prefix =
+				if error.downcast_ref::<WasmGodotError>().is_some() {
+					"Godot"
+				} else if error.downcast_ref::<WasmAnyError>().is_some() {
+					"wasmtime-gd"
+				} else if error.downcast_ref::<ThrownException>().is_some() {
+					"WASM Exn"
+				} else if error.downcast_ref::<wasmtime::Trap>().is_some() {
+					"WASM Trap"
+				} else {
+					"Something"
+				};
 
 			let msg = error
 				.chain()

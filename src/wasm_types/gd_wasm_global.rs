@@ -124,7 +124,7 @@ impl WasmGlobal {
 	fn set_value(&mut self, value: Variant) -> MyGodotResult<bool> {
 		let mut context = self.context.as_context_mut();
 
-		let global_type = self.global.ty(&self.context.as_context());
+		let global_type = self.global.ty(self.context.as_context());
 		let val = global_type.content().val_from(value, &mut context)
 			.or_godot_error("Failed to convert Variant:", false)?;
 		self.global.set(&mut context, val)

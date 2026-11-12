@@ -63,13 +63,8 @@ impl WasmCaller {
         // TODO: Don't unwrap.
         let context = WasmContext::new(gd_self.clone().into_dyn().upcast());
         match gd_self.clone().bind_mut().caller.clone().unwrap().borrow_mut().get_export(&name.to_string()) {
-            Some(exter) => {
-                match exter {
-                    wasmtime::Extern::Memory(memory) => Some(WasmMemory::new_from(memory, context)),
-                    _ => None,
-                }
-            },
-            None => None,
+            Some(wasmtime::Extern::Memory(memory)) => Some(WasmMemory::new_from(memory, context)),
+            _ => None,
         }
     }
 

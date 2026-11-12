@@ -42,10 +42,8 @@ impl WasmInstance {
     fn get_global(&mut self, name: GString) -> Option<Gd<WasmGlobal>> {
         let gd_store = self.store.clone();
         let context = WasmContext::new(gd_store.into_dyn().upcast());
-        return match self.instance.get_global(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(global) => Some(WasmGlobal::new_from(global, context)),
-            None => None,
-        };
+        return self.instance.get_global(&mut self.store.bind_mut().as_context_mut(), &name.to_string())
+            .map(|global| WasmGlobal::new_from(global, context));
     }
 
     /// Get an exported [WasmFunc] value by name.
@@ -53,10 +51,8 @@ impl WasmInstance {
     fn get_func(&mut self, name: GString) -> Option<Gd<WasmFunc>> {
         let gd_store = self.store.clone();
         let context = WasmContext::new(gd_store.into_dyn().upcast());
-        return match self.instance.get_func(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(func) => Some(WasmFunc::new_from(func, context)),
-            None => None,
-        };
+        return self.instance.get_func(&mut self.store.bind_mut().as_context_mut(), &name.to_string())
+            .map(|func| WasmFunc::new_from(func, context));
     }
 
     /// Get an exported [WasmMemory] value by name.
@@ -64,10 +60,8 @@ impl WasmInstance {
     fn get_memory(&mut self, name: GString) -> Option<Gd<WasmMemory>> {
         let gd_store = self.store.clone();
         let context = WasmContext::new(gd_store.into_dyn().upcast());
-        return match self.instance.get_memory(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(memory) => Some(WasmMemory::new_from(memory, context)),
-            None => None,
-        };
+        return self.instance.get_memory(&mut self.store.bind_mut().as_context_mut(), &name.to_string())
+            .map(|memory| WasmMemory::new_from(memory, context));
     }
 
     /// Get an exported [WasmTable] value by name.
@@ -75,10 +69,8 @@ impl WasmInstance {
     fn get_table(&mut self, name: GString) -> Option<Gd<WasmTable>> {
         let gd_store = self.store.clone();
         let context = WasmContext::new(gd_store.into_dyn().upcast());
-        return match self.instance.get_table(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(table) => Some(WasmTable::new_from(table, context)),
-            None => None,
-        };
+        return self.instance.get_table(&mut self.store.bind_mut().as_context_mut(), &name.to_string())
+            .map(|table| WasmTable::new_from(table, context));
     }
 
     /// Get an exported [WasmTag] value by name.
@@ -86,9 +78,7 @@ impl WasmInstance {
     fn get_tag(&mut self, name: GString) -> Option<Gd<WasmTag>> {
         let gd_store = self.store.clone();
         let context = WasmContext::new(gd_store.into_dyn().upcast());
-        return match self.instance.get_tag(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(tag) => Some(WasmTag::new_from(tag, context)),
-            None => None,
-        };
+        return self.instance.get_tag(&mut self.store.bind_mut().as_context_mut(), &name.to_string())
+            .map(|tag| WasmTag::new_from(tag, context));
     }
 }

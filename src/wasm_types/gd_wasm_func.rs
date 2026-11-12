@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{active_context::WasmContext, gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
+use crate::{active_context::WasmContext, gd_wasm_caller::WasmCaller, gd_wasm_error::WasmError, store_data::StoreData, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*, wasm_types::*};
 use super::WasmAsExtern;
 
 
@@ -87,7 +87,7 @@ impl WasmFunc {
 				};
 
 				// transmute to 'static
-				let gd_caller = unsafe { WasmCaller::new_from(std::mem::transmute(caller)) };
+				let gd_caller = unsafe { WasmCaller::new_from(std::mem::transmute::<wasmtime::Caller<'_, StoreData>, wasmtime::Caller<'_, StoreData>>(caller)) };
 				let _guard_active_caller = WasmContext::push_active_call_scoped(gd_caller.clone().into_dyn().upcast());
 				let _guard_invalidate = scopeguard::guard((), |_| {
 					gd_caller.clone().bind_mut().invalidate();
@@ -118,8 +118,8 @@ impl WasmFunc {
 						if len != array.len() {
 							return Err(wasmtime::Error::msg(format!("Incorrect return value count, expected {} but got {}", len, array.len())));
 						}
-						for i in 0..len {
-							results[i] = func_type.result(i).unwrap().val_from(array.at(i), &mut gd_caller.clone().bind_mut().as_context_mut()).into_trap(&format!("results[{}]", i))?;
+						for (i, val) in results.iter_mut().enumerate().take(len) {
+							*val = func_type.result(i).unwrap().val_from(array.at(i), &mut gd_caller.clone().bind_mut().as_context_mut()).into_trap(&format!("results[{}]", i))?;
 						}
 					}
 				}

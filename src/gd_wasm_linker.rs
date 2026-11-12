@@ -59,6 +59,6 @@ impl WasmLinker {
     /// This allows `linker.define_feature(store, MyFeature.define_feature)` pattern.
     #[func(gd_self)]
     fn define_feature(gd_self: Gd<Self>, store: Gd<WasmStore>, callable: Callable) -> Variant {
-        return callable.call(&vec![gd_self.to_variant(), store.to_variant()]);
+        return callable.call(&[gd_self.to_variant(), store.to_variant()]);
     }
 }

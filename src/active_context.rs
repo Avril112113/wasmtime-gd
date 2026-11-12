@@ -8,7 +8,7 @@ use crate::{store_data::StoreData, utils::{ContextGuard, ContextGuardMut, GdAsCo
 thread_local! {
 	pub(crate) static ACTIVE_CALLERS: RefCell<HashMap<usize, Vec<DynGd<RefCounted, dyn GdAsContext>>>> = RefCell::new(HashMap::new());
 }
-static ACTIVE_CALL_THREADS: Mutex<LazyLock<HashMap<InstanceId, ThreadId>>> = Mutex::new(LazyLock::new(|| HashMap::new()));
+static ACTIVE_CALL_THREADS: Mutex<LazyLock<HashMap<InstanceId, ThreadId>>> = Mutex::new(LazyLock::new(HashMap::new));
 
 
 #[derive(Clone, Debug)]

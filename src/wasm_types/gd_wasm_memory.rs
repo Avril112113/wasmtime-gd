@@ -301,7 +301,8 @@ impl WasmMemory {
 	fn read_u64(&mut self, offset: i64) -> MyGodotResult<i64> {
 		let mut bytes = vec![0; size_of::<u64>()];
 		self._read(offset, bytes.as_mut_slice()).map_err(|err| err.with_value(0))?;
-		return Ok(i64::try_from(u64::from_le_bytes(bytes.as_slice().try_into().unwrap())).or_godot_error("u64 value was larger than a i64's positive section, which godot can't represent.", 0)?);
+		return i64::try_from(u64::from_le_bytes(bytes.as_slice().try_into().unwrap()))
+			.or_godot_error("u64 value was larger than a i64's positive section, which godot can't represent.", 0);
 	}
 
 	/// Check if 2 [WasmMemory]s are actually the same memory.

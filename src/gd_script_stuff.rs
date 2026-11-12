@@ -26,7 +26,7 @@ impl GDScriptStuff {
 		}
 		
 
-		return SCRIPT_CACHE.with_borrow_mut(|script| script.call("_get_stack", &vec![]).to::<Array<AnyDictionary>>());
+		return SCRIPT_CACHE.with_borrow_mut(|script| script.call("_get_stack", &[]).to::<Array<AnyDictionary>>());
 	}
 
 	pub fn get_last_frame_info() -> Option<(String, String, u32)> {
@@ -39,22 +39,19 @@ impl GDScriptStuff {
 	}
 
 	pub fn get_frame_print_source<'l>(frame_info: &'l Option<(String, String, u32)>) -> Option<PrintSource<'l>> {
-		return match frame_info {
-			Some((func, file, line)) => Some(godot::global::PrintSource::<'l> {
-				function: func.as_str(),
-				file: file.as_str(),
-				line: *line,
-			}),
-			None => None,
-		};
+		return frame_info.as_ref().map(|(func, file, line)| godot::global::PrintSource::<'l> {
+			function: func.as_str(),
+			file: file.as_str(),
+			line: *line,
+		});
 	}
 
 	pub fn print_error(msg: &str, rationale: Option<&str>, source: Option<PrintSource<'_>>) {
-		if let Some(_) = source {
+		if source.is_some() {
 			print_custom(PrintRecord {
 				level: godot::global::PrintLevel::Error,
 				message: msg,
-				rationale: rationale.into(),
+				rationale,
 				source,
 				editor_notify: false,
 			});
@@ -62,7 +59,7 @@ impl GDScriptStuff {
 			print_custom(PrintRecord {
 				level: godot::global::PrintLevel::Error,
 				message: msg,
-				rationale: rationale.into(),
+				rationale,
 				source: get_last_print_source!(),
 				editor_notify: false,
 			});

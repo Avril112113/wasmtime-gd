@@ -19,6 +19,7 @@ unsafe impl Sync for ThreadVariant {}
 impl ThreadVariant {
     pub fn new(value: Variant) -> Self {
         Self {
+            #[allow(clippy::arc_with_non_send_sync)]
             inner: Arc::new(Mutex::new(Inner {
                 value,
                 owner: std::thread::current().id(),
@@ -28,20 +29,16 @@ impl ThreadVariant {
 
     pub fn get(&self) -> Variant {
 		let inner = self.inner.lock().unwrap();
-        if std::thread::current().id() != inner.owner {
-			if let Err(reason) = Self::is_thread_safe(&inner.value) {
-				panic!("{}", reason);
-			}
+        if std::thread::current().id() != inner.owner && let Err(reason) = Self::is_thread_safe(&inner.value) {
+            panic!("{}", reason);
         }
 		return inner.value.clone();
     }
 
     pub fn into_inner(self) -> Variant {
 		let mut inner = self.inner.lock().unwrap();
-        if std::thread::current().id() != inner.owner {
-			if let Err(reason) = Self::is_thread_safe(&inner.value) {
-				panic!("{}", reason);
-			}
+        if std::thread::current().id() != inner.owner && let Err(reason) = Self::is_thread_safe(&inner.value) {
+            panic!("{}", reason);
         }
 		return std::mem::replace(&mut inner.value, Variant::nil());
     }

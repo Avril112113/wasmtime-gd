@@ -4,6 +4,8 @@
 #![feature(current_thread_id)]
 #![feature(thread_id_value)]
 
+#![allow(clippy::needless_return)]
+
 mod gd_script_stuff;
 
 mod utils_errors;

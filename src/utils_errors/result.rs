@@ -13,8 +13,8 @@ pub(crate) struct MyGodotError<T> { pub value: T, pub msg: String, pub err: Opti
 impl<T> MyGodotError<T> {
 	pub fn from(msg: String, value: T) -> MyGodotError::<T> {
 		return MyGodotError::<T> {
-			value: value,
-			msg: msg,
+			value,
+			msg,
 			err: None,
 		};
 	}
@@ -42,7 +42,7 @@ impl<T> Display for MyGodotError<T> {
 		let message = if let Some(err) = self.err.as_ref() {
 			format!("{}: {}", self.msg, err)
 		} else {
-			format!("{}", self.msg)
+			self.msg.to_string()
 		};
 		return f.write_str(&message);
 	}
@@ -61,7 +61,7 @@ impl<T: Element> ErrorToGodot<T> for MyGodotError<T> {
 				let message = if let Some(err) = err.as_ref() {
 					format!("{}: {}", msg, err)
 				} else {
-					format!("{}", msg)
+					msg.to_string()
 				};
 
 				print_custom(PrintRecord {
