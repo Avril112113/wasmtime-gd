@@ -56,25 +56,29 @@ impl WasmGlobal {
 		}));
 	}
 
-	/// Create a new [WasmGlobal] which contains a i32.
+	/// Create a new [WasmGlobal] which contains a i32. [br]
+	/// [param context] can be one of; [WasmStore] or [WasmCaller]
 	#[func]
 	fn new_i32(context: WasmContext, default: i32, mutable: bool) -> Option<Gd<Self>> {
 		return Self::new_global(context, ValType::I32, mutable, I32(default));
 	}
 
-	/// Create a new [WasmGlobal] which contains a i64.
+	/// Create a new [WasmGlobal] which contains a i64. [br]
+	/// [param context] can be one of; [WasmStore] or [WasmCaller]
 	#[func]
 	fn new_i64(context: WasmContext, default: i64, mutable: bool) -> Option<Gd<Self>> {
 		return Self::new_global(context, ValType::I64, mutable, I64(default));
 	}
 
-	/// Create a new [WasmGlobal] which contains a f32.
+	/// Create a new [WasmGlobal] which contains a f32. [br]
+	/// [param context] can be one of; [WasmStore] or [WasmCaller]
 	#[func]
 	fn new_f32(context: WasmContext, default: f32, mutable: bool) -> Option<Gd<Self>> {
 		return Self::new_global(context, ValType::F32, mutable, F32(default.to_bits()));
 	}
 
-	/// Create a new [WasmGlobal] which contains a f64.
+	/// Create a new [WasmGlobal] which contains a f64. [br]
+	/// [param context] can be one of; [WasmStore] or [WasmCaller]
 	#[func]
 	fn new_f64(context: WasmContext, default: f64, mutable: bool) -> Option<Gd<Self>> {
 		return Self::new_global(context, ValType::F64, mutable, F64(default.to_bits()));

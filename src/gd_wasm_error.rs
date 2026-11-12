@@ -114,6 +114,7 @@ impl WasmError {
 		return self.error.is_none();
 	}
 
+	/// Wether or not this error is a thrown WASM exception.
 	#[func]
 	fn is_throw_exception(&self) -> bool {
 		return self.error.as_ref().is_some_and(|e| e.downcast_ref::<ThrownException>().is_some());
@@ -129,6 +130,7 @@ impl WasmError {
 		return Variant::nil();
 	}
 
+	/// The error as a string, as seen by [method print]
 	#[func]
 	pub fn as_string(&self) -> String {
 		if let Some(error) = self.error.as_ref() {

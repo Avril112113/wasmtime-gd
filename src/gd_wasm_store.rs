@@ -18,8 +18,13 @@ use crate::{
 pub struct WasmStore {
 	pub store: Rc<RefCell<wasmtime::Store<StoreData>>>,
 
+	/// The current fuel for WASM execution.
+	/// If fuel runs out, a OutOfFuel trap will be raised.
+	/// Ensure [method WasmConfig.consume_fuel] is enabled.
 	#[var(get = get_fuel, set = _set_fuel)]
 	fuel: PhantomVar<i64>,
+	/// The fuel used when WASM calls into Godot (a [WasmFunc]).
+	/// See [member fuel] for details on fuel.
 	#[var(get = get_host_call_fuel_use, set = set_host_call_fuel_use)]
 	host_call_fuel_use: PhantomVar<i64>,
 }
@@ -58,6 +63,7 @@ impl WasmStore {
 		return self.as_context().same_store_as(&other.dyn_bind().as_context());
 	}
 
+    /// See [member fuel] for details.
 	#[func]
 	pub fn get_fuel(&self) -> i64 {
 		return self.as_context().get_fuel()
@@ -66,6 +72,7 @@ impl WasmStore {
 			.unwrap_or(-1);
 	}
 
+    /// See [member fuel] for details.
 	#[func]
 	#[doc(hidden)]
 	pub fn _set_fuel(&mut self, fuel: i64) {
@@ -74,6 +81,7 @@ impl WasmStore {
 			.or_print_error("Failed to set fuel");
 	}
 
+    /// See [member fuel] for details.
 	#[func]
 	pub fn set_fuel(&mut self, fuel: i64) -> MyGodotResult<bool> {
 		return self.as_context_mut().set_fuel(fuel as u64)
@@ -81,11 +89,13 @@ impl WasmStore {
 			.or_godot_error("Failed to set fuel", false);
 	}
 
+	/// See [member host_call_fuel_use] for details.
 	#[func]
 	pub fn get_host_call_fuel_use(&self) -> i64 {
 		return self.as_context().data().call_fuel_use as i64;
 	}
 
+	/// See [member host_call_fuel_use] for details.
 	#[func]
 	pub fn set_host_call_fuel_use(&mut self, fuel: i64) {
 		self.as_context_mut().data_mut().call_fuel_use = fuel as u64;

@@ -38,9 +38,10 @@ impl WasmFunc {
 		})
 	}
 
-	/// Creates a new [WasmFunc] from a godot [Callable] [br]
-	/// If [param fuel_cost] [code]>= 0[/code], this much fuel will be consumed when called, otherwise the default from [property WasmStore.host_call_fuel_use] [br]
-	/// Ensure the callable stays valid! See this issue: https://github.com/godotengine/godot/issues/74990
+	/// Creates a new [WasmFunc] in the given [param context] from a godot [Callable] [br]
+	/// If [param fuel_cost] [code]>= 0[/code], this much fuel will be consumed when called, otherwise the default from [member WasmStore.host_call_fuel_use] [br]
+	/// Ensure the callable stays valid! See this issue: https://github.com/godotengine/godot/issues/74990 [br]
+	/// [param context] can be one of; [WasmStore] or [WasmCaller]
 	#[func]
 	fn from_callable(context: WasmContext, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable, #[opt(default=-1)] fuel_cost: i64) -> MyGodotResult<Option<Gd<Self>>> {
 		if callable.get_argument_count() != param_types.len() + 1 {

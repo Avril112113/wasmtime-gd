@@ -8,16 +8,16 @@ use crate::{
 };
 
 
-/// A Wasmtime Extern::Global
+/// A [WasmCaller] is the current execution [b]context[/b] passed to [WasmFunc].
 /// 
-/// Note: A simple `==` between [WasmCaller] is not enough, use [method same_as]
-/// 
-/// Note: "incompatible import type" can be due to differing mutability!
+/// It is used to access the callee's memory, exports or otherwise interact with the WASM from a WASM call.
 #[derive(GodotClass)]
 #[class(base=RefCounted)]
 pub struct WasmCaller {
 	caller: Option<Rc<RefCell<wasmtime::Caller<'static, StoreData>>>>,
 
+    /// The current fuel of this context's underlying [WasmStore].
+    /// See [member WasmStore.fuel] for details.
 	#[var(get = get_fuel, set = _set_fuel)]
 	fuel: PhantomVar<i64>,
 }
@@ -68,6 +68,8 @@ impl WasmCaller {
         }
     }
 
+    /// Get the current fuel of this context's underlying [WasmStore].
+    /// See [member WasmStore.fuel] for details.
 	#[func]
 	pub fn get_fuel(&self) -> i64 {
 		return self.as_context().get_fuel()
@@ -76,6 +78,8 @@ impl WasmCaller {
 			.unwrap_or(-1);
 	}
 
+    /// Set the current fuel of this context's underlying [WasmStore].
+    /// See [member WasmStore.fuel] for details.
 	#[func]
 	#[doc(hidden)]
 	pub fn _set_fuel(&mut self, fuel: i64) {
@@ -84,6 +88,8 @@ impl WasmCaller {
 			.or_print_error("Failed to set fuel");
 	}
 
+    /// Set the current fuel of this context's underlying [WasmStore].
+    /// See [member WasmStore.fuel] for details.
 	#[func]
 	pub fn set_fuel(&mut self, fuel: i64) -> MyGodotResult<bool> {
 		return self.as_context_mut().set_fuel(fuel as u64)

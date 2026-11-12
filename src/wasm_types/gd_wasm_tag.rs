@@ -39,6 +39,8 @@ impl WasmTag {
 		})
 	}
 
+	/// Create a new [WasmTag] in the given [param context] with the given [param func_type] [br]
+	/// [param context] can be one of; [WasmStore] or [WasmCaller]
 	#[func]
 	fn new_tag(&self, context: WasmContext, func_type: Array<Variant>) -> MyGodotResult<Option<Gd<WasmTag>>> {
 		let mut ctx = self.context.as_context_mut();

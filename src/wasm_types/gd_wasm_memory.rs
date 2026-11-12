@@ -43,7 +43,8 @@ impl WasmMemory {
 		})
 	}
 
-	/// Creates a new [WasmMemory]
+	/// Creates a new [WasmMemory] in the given [param context] [br]
+	/// [param context] can be one of; [WasmStore] or [WasmCaller]
 	#[func]
 	fn new_memory(&self, context: WasmContext, minimum: i64, #[opt(default=-1)] maximum: i64, #[opt(default=false)] is_64: bool) -> Option<Gd<WasmMemory>> {
 		let mut memory_builder = wasmtime::MemoryTypeBuilder::new();
