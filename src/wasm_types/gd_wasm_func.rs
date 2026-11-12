@@ -43,6 +43,10 @@ impl WasmFunc {
 	/// Ensure the callable stays valid! See this issue: https://github.com/godotengine/godot/issues/74990
 	#[func]
 	fn from_callable(context: WasmContext, param_types: Array<Variant>, result_types: Array<Variant>, callable: Callable, #[opt(default=-1)] fuel_cost: i64) -> MyGodotResult<Option<Gd<Self>>> {
+		if callable.get_argument_count() != param_types.len() + 1 {
+			return Err(MyGodotError::from(format!("Expected callable to take {} arguments, but it only takes {} (did you forget the first argument `caller: WasmCaller`? Or did you use `...args` which is not supported?)", param_types.len() + 1, callable.get_argument_count()), None));
+		}
+		
 		let gd_context = context.clone();
 		
 		let callable = fragile::Fragile::new(callable);
