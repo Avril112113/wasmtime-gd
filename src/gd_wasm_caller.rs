@@ -26,7 +26,7 @@ pub struct WasmCaller {
 impl IRefCounted for WasmCaller {
     fn init(_base: Base<Self::Base>) -> Self {
         if !is_editor() {
-            GDScriptStuff::print_error("WasmCaller.new() is invalid!", None);
+            GDScriptStuff::print_error("WasmCaller.new() is invalid!", None, None);
         }
         return Self { caller: None, fuel: Default::default() }
     }

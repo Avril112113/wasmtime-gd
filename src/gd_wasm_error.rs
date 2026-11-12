@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 use godot::{meta::AsArg, prelude::*};
 use wasmtime::ThrownException;
 
-use crate::{gd_script_stuff::GDScriptStuff, thread_safe_variant::ThreadVariant};
+use crate::{gd_script_stuff::{GDScriptStuff, ToPrintSourceOption}, get_last_print_source, thread_safe_variant::ThreadVariant};
 
 
 static INCLUDE_RUST_BACKTRACE: AtomicBool = AtomicBool::new(false);
@@ -59,6 +59,7 @@ impl std::fmt::Display for WasmAnyError {
 #[class(base=RefCounted)]
 pub struct WasmError {
 	pub error: Option<wasmtime::Error>,
+	created_source: Option<(String, String, u32)>,
 
 	/// The value which was given to [member new_from]. [br]
 	/// If the error wasn't created with [member new_from], this will be [code]null[/code].
@@ -72,6 +73,7 @@ impl IRefCounted for WasmError {
 		// Normally we'd panic on using this, but since we have a property, Godot creates a new one upon init.
 		Self {
 			error: Some(wasmtime::Error::new(WasmGodotError::new("Anonymous WasmError (avoid using `WasmError.new()`)"))),
+			created_source: GDScriptStuff::get_last_frame_info(),
 			data: PhantomVar::default(),
 		}
 	}
@@ -82,6 +84,7 @@ impl WasmError {
 	pub fn new_from_error(error: wasmtime::Error) -> Gd<Self> {
 		return Gd::from_object(Self {
 			error: Some(error),
+			created_source: GDScriptStuff::get_last_frame_info(),
 			data: PhantomVar::default(),
 		});
 	}
@@ -89,6 +92,7 @@ impl WasmError {
 	pub fn new_from_any_error(error: anyhow::Error) -> Gd<Self> {
 		return Gd::from_object(Self {
 			error: Some(wasmtime::Error::new(WasmAnyError::new(error))),
+			created_source: GDScriptStuff::get_last_frame_info(),
 			data: PhantomVar::default(),
 		});
 	}
@@ -98,6 +102,7 @@ impl WasmError {
 	pub fn new_from(data: Variant) -> Gd<Self> {
 		return Gd::from_object(Self {
 			error: Some(wasmtime::Error::new(WasmGodotError::new(&data))),
+			created_source: GDScriptStuff::get_last_frame_info(),
 			data: PhantomVar::default(),
 		});
 	}
@@ -163,7 +168,15 @@ impl WasmError {
 	/// Prints/logs the [WasmError] as an error.
 	#[func]
 	pub fn print(&self) {
-		GDScriptStuff::print_error(&self.as_string(), None);
+		if let Some(created_source) = &self.created_source {
+			if let Some(print_source) = get_last_print_source!() {
+				GDScriptStuff::print_error(&format!("{}:{} - {}", created_source.1, created_source.2, self.as_string()), None, Some(print_source));
+			} else {
+				GDScriptStuff::print_error(&self.as_string(), None, self.created_source.to_print_source());
+			}
+		} else {
+			GDScriptStuff::print_error(&self.as_string(), None, get_last_print_source!());
+		}
 	}
 
 	/// Whether or not to include the rust backtrace when [member print] is called. [br]

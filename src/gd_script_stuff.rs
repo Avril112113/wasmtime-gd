@@ -5,6 +5,14 @@ use godot::global::{PrintRecord, PrintSource, print_custom};
 use godot::prelude::*;
 use godot::classes::class_macros::private::virtuals::ZipReader::AnyDictionary;
 
+
+#[macro_export]
+macro_rules! get_last_print_source {
+	() => {
+		$crate::gd_script_stuff::GDScriptStuff::get_frame_print_source(&$crate::gd_script_stuff::GDScriptStuff::get_last_frame_info())
+	};
+}
+
 pub(crate) struct GDScriptStuff;
 impl GDScriptStuff {
 	pub fn get_stack() -> Array<AnyDictionary> {
@@ -30,7 +38,7 @@ impl GDScriptStuff {
 		));
 	}
 
-	pub fn get_last_print_source<'l>(frame_info: &'l Option<(String, String, u32)>) -> Option<PrintSource<'l>> {
+	pub fn get_frame_print_source<'l>(frame_info: &'l Option<(String, String, u32)>) -> Option<PrintSource<'l>> {
 		return match frame_info {
 			Some((func, file, line)) => Some(godot::global::PrintSource::<'l> {
 				function: func.as_str(),
@@ -41,17 +49,24 @@ impl GDScriptStuff {
 		};
 	}
 
-	pub fn print_error(msg: &str, rationale: Option<&str>) {
-		let frame_info = Self::get_last_frame_info();
-		let source = frame_info.to_print_source();
-		
-		print_custom(PrintRecord {
-			level: godot::global::PrintLevel::Error,
-			message: msg,
-			rationale: rationale,
-			source,
-			editor_notify: false,
-		});
+	pub fn print_error(msg: &str, rationale: Option<&str>, source: Option<PrintSource<'_>>) {
+		if let Some(_) = source {
+			print_custom(PrintRecord {
+				level: godot::global::PrintLevel::Error,
+				message: msg,
+				rationale: rationale.into(),
+				source,
+				editor_notify: false,
+			});
+		} else {
+			print_custom(PrintRecord {
+				level: godot::global::PrintLevel::Error,
+				message: msg,
+				rationale: rationale.into(),
+				source: get_last_print_source!(),
+				editor_notify: false,
+			});
+		}
 	}
 }
 
