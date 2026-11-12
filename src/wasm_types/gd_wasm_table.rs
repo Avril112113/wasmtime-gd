@@ -99,7 +99,7 @@ impl WasmTable {
 			return Ok(true);
 		}
 		let mut context = self.context.as_context_mut();
-		let table_type = self.table.ty(&self.context.as_context());
+		let table_type = self.table.ty(&context);
 		let val = table_type.element().val_from(value, &mut context)
 			.or_godot_error("Failed to convert Variant:", false)?;
 		self.table.set(&mut context, index as u64, val.ref_().or_godot_error("expected ref type", false)?)
