@@ -27,18 +27,18 @@ func _run() -> void:
 	var main_state := box.new_state()
 	main_state.openlibs()
 	
-	## TODO
+	## TODO: This should push a userdata for GdFunction
 	#main_state.lua_globals.lua_set("fn1", func(...args: Array):
 		#print("Haii! :D ", args)
 		#return [123, "simpley cool!"]
 	#)
-	## TODO
-	#main_state.lua_globals.lua_set("fn2", main_state.gdfunction(func(state: LuaState, ...args: Array):
-		#print("Nice state ", state, " ", args)
-		#return [123, "what a state!"]
-	#))
+	# TODO: This should push a cfunction
+	main_state.lua_globals.lua_set("fn2", main_state.box.lua_cfunction(func(state: LuaState, ...args: Array):
+		print("Nice state ", state, " ", args)
+		return [123, "what a state!"]
+	))
 	
-	var fn: LuaFunction = main_state.loadstring("return 'Hi!\\0x00Hehe...'")
+	var fn: LuaFunction = main_state.loadstring("return fn2('Haii!')")
 	print(fn.lua_pcall())
 	
 	print()

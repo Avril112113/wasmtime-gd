@@ -61,7 +61,7 @@ func _run() -> void:
 	
 	var main_state := box.get_main_state()._state
 	
-	var my_gd_fn_ptr := box._get_or_add_indirect_function(
+	var my_gd_fn := box._get_or_add_indirect_function(
 		func(_caller: WasmCaller, lua_state_ptr: int):
 			var state := box._get_state_raw(lua_state_ptr)
 			
@@ -77,7 +77,7 @@ func _run() -> void:
 			return 1
 			#return state.lua_error()
 	)
-	main_state.lua_pushcclosure(my_gd_fn_ptr, 0)
+	my_gd_fn._push_closure(main_state)
 	
 	main_state.lua_setglobal("my_gd_fn")
 	

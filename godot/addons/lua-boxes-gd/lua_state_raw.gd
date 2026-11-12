@@ -60,7 +60,8 @@ func _to_variant(idx: int) -> Variant:
 	assert(false, "Unsupported type '%s' _to_variant(%s)" % [self.lua_typename(ltype), idx])
 	return null
 
-## Returns the amount of values pushed.
+## Returns the amount of values pushed. [br]
+## If [param value] is [LuaCFunction], it is pushed with no upvalues.
 func _push_variant(value: Variant) -> int:
 	match typeof(value):
 		TYPE_NIL:
@@ -115,6 +116,9 @@ func _push_variant(value: Variant) -> int:
 		TYPE_OBJECT:
 			if value is LuaValueRef:
 				return value._push(self)
+			elif value is LuaCFunction:
+				assert(not value._push_closure(self, 0) is WasmError)
+				return 1
 			assert(false, "Unsupported Variant _push_variant(%s)" % [value])
 		TYPE_CALLABLE:
 			assert(false, "Unsupported Variant _push_variant(%s)" % [type_string(typeof(value))])
@@ -233,7 +237,7 @@ func lua_pcallk(nargs: int, nresults: int, errfunc: int, ctx: int, k: int) -> Lu
 	if result is WasmError:
 		if not result.is_throw_exception():
 			result.print()
-		return result
+		return LuaBox.LuaErr.ERRRUN
 	return result[0]
 
 ## Expected stack: function, args... [br]

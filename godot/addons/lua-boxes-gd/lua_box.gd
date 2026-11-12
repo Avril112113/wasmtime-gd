@@ -91,7 +91,7 @@ var _instance: WasmInstance
 
 var _exports: LuaWasmExports
 
-var _function_table_indicies: Dictionary[Callable, int] = {}
+var _function_table_indicies: Dictionary[Callable, LuaCFunction] = {}
 
 var _raw_states: Dictionary[int, WeakRef] = {}
 var _states: Dictionary[int, WeakRef] = {}
@@ -180,14 +180,45 @@ func _get_state_from(state_ptr: int) -> LuaState:
 		
 	return self._get_state(self._get_state_raw(state_ptr))
 
-func _get_or_add_indirect_function(callable: Callable) -> int:
-	if callable in _function_table_indicies:
-		return _function_table_indicies[callable]
+func _get_or_add_indirect_function(callable_key: Callable, callable_called := Callable()) -> LuaCFunction:
+	if callable_called == Callable():
+		callable_called = callable_key
+	
+	if callable_key in _function_table_indicies:
+		return _function_table_indicies[callable_key]
 	
 	var idx := _exports.__indirect_function_table.size()
-	_exports.__indirect_function_table.grow(1, WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], callable))
-	_function_table_indicies[callable] = idx
-	return idx
+	_exports.__indirect_function_table.grow(1, WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], callable_called))
+	var cfunc := LuaCFunction.new(self, idx)
+	_function_table_indicies[callable_key] = cfunc
+	return cfunc
+
+func lua_cfunction(callable: Callable) -> LuaCFunction:
+	return self._get_or_add_indirect_function(
+		callable,
+		func(_caller: WasmCaller, state_ptr: int) -> Variant:
+			var state := self._get_state_from(state_ptr)
+			
+			var args := [state]
+			for i in range(state._state.lua_gettop()):
+				var arg := state._state._to_variant(i + 1)
+				if arg is WasmError:
+					return arg
+				args.push_back(arg)
+			
+			var result := callable.callv(args)
+			if typeof(result) == TYPE_OBJECT and result is WasmError:
+				return result
+			assert(typeof(result) == TYPE_ARRAY, "lua_cfunction expected callable to return array of values or WasmError.")
+			
+			var pushed := 0
+			for value in result:
+				var n := state._state._push_variant(value)
+				if n == 0:
+					return WasmError.new_from(value)
+				pushed += n
+			return pushed
+	)
 
 func _malloc_string(s: String) -> int:
 	var bytes := s.to_utf8_buffer()
