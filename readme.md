@@ -9,7 +9,7 @@ Notable features;
 - Run WASM or WAT using wasmtime.
 - Supports WASM exceptions.
 - GDScript side wasi preview1 implementation.
-- Nearly every method is documented.
+- Nearly every method is documented. *(Excluding WasmConfig)*
 - Better safety with Rust *(though @Avril112113 is no expert in Rust)*
 
 What is not included;
