@@ -19,3 +19,9 @@ What is not included;
 - No sandbox is completely secure, use this library at your own risk.  
   If you find a security issue, please make a GitHub issue!  
   There is no official channel for responsible disclosure currently.  
+
+## AI Disclosure
+AI has been used for code quality and verification.  
+Some small sections may have been AI generated code.  
+The overwhelming majority of the code is manually written and everything is reviewed.  
+**PR's and issues must follow the principles above.**  
