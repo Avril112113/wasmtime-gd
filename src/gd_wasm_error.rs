@@ -152,11 +152,7 @@ impl WasmError {
 				.join("\n");
 
 			if INCLUDE_RUST_BACKTRACE.load(std::sync::atomic::Ordering::Relaxed) {
-				let rust_backtrace = error.backtrace().to_string()
-					.lines()
-					.filter(|line| line.contains("wasmtime_gd"))
-					.collect::<Vec<&str>>()
-					.join("\n");
+				let rust_backtrace = error.backtrace().to_string();
 				return format!("{} returned an error:\n{}\nRust Backtrace:\n{}", prefix, msg, rust_backtrace);
 			} else {
 				return format!("{} returned an error:\n{}", prefix, msg);
