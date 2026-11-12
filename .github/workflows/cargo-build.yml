@@ -3,10 +3,16 @@ name: Cargo Build
 on:
   push:
     paths:
-      - 'src/**'
+      - "cargo.toml"
+      - "cargo.lock"
+      - ".cargo/**"
+      - "src/**"
   pull_request:
     paths:
-      - 'src/**'
+      - "cargo.toml"
+      - "cargo.lock"
+      - ".cargo/**"
+      - "src/**"
 
 env: 
   CARGO_TERM_COLOR: always
