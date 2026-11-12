@@ -8,6 +8,7 @@ mod gd_script_stuff;
 
 mod utils_errors;
 mod utils;
+mod active_context;
 
 mod to_from_variant;
 mod wasm_types;

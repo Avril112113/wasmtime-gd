@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{store_same_as::ContextStoreSameAs, to_from_variant::ToFromVariant, utils::GdAsContext, utils_errors::*};
+use crate::{active_context::WasmContext, store_same_as::ContextStoreSameAs, to_from_variant::ToFromVariant, utils_errors::*};
 use super::WasmAsExtern;
 
 /// A Wasmtime Extern::Memory
@@ -17,7 +17,7 @@ use super::WasmAsExtern;
 #[class(base=RefCounted)]
 pub struct WasmMemory {
 	pub memory: wasmtime::Memory,
-    context: DynGd<RefCounted, dyn GdAsContext>,
+    context: WasmContext,
 }
 
 #[godot_dyn]
@@ -36,7 +36,7 @@ impl IRefCounted for WasmMemory {
 
 #[godot_api]
 impl WasmMemory {
-	pub fn new_from(memory: wasmtime::Memory, context: DynGd<RefCounted, dyn GdAsContext>) -> Gd<Self> {
+	pub fn new_from(memory: wasmtime::Memory, context: WasmContext) -> Gd<Self> {
 		return Gd::from_object(Self {
 			memory,
 			context,
@@ -45,7 +45,7 @@ impl WasmMemory {
 
 	/// Creates a new [WasmMemory]
 	#[func]
-	fn new_memory(&self, mut context: DynGd<RefCounted, dyn GdAsContext>, minimum: i64, #[opt(default=-1)] maximum: i64, #[opt(default=false)] is_64: bool) -> Option<Gd<WasmMemory>> {
+	fn new_memory(&self, context: WasmContext, minimum: i64, #[opt(default=-1)] maximum: i64, #[opt(default=false)] is_64: bool) -> Option<Gd<WasmMemory>> {
 		let mut memory_builder = wasmtime::MemoryTypeBuilder::new();
 		
 		let minimum = minimum.try_into().or_print_error(&format!("param minimum is out of bounds of u64 (between 0 - {})", u64::MAX))?;
@@ -60,7 +60,7 @@ impl WasmMemory {
 
 		let memory_type = memory_builder.build()
 			.or_print_error("Failed to create memory")?;
-		let memory = wasmtime::Memory::new(&mut context.dyn_bind_mut().as_context_mut(), memory_type)
+		let memory = wasmtime::Memory::new(self.context.as_context_mut(), memory_type)
 			.or_print_error("Failed to create memory")?;
 		return Some(WasmMemory::new_from(
 			memory,
@@ -71,31 +71,31 @@ impl WasmMemory {
 	/// Returns the memory type. The contents may change in the future, only pass this value back to wasmtime-gd.
 	#[func]
 	fn get_memory_type(&self) -> Variant {
-		return self.memory.ty(&self.context.dyn_bind().as_context()).to_variant();
+		return self.memory.ty(self.context.as_context()).to_variant();
 	}
 
 	/// Returns the size, in units of pages, of this Wasm memory.
 	#[func]
 	fn size(&self) -> i64 {
-		return self.memory.size(&self.context.dyn_bind().as_context()) as i64;
+		return self.memory.size(self.context.as_context()) as i64;
 	}
 
 	/// Returns the byte length of this memory.
 	#[func]
 	fn data_size(&self) -> i64 {
-		return self.memory.data_size(&self.context.dyn_bind().as_context()) as i64;
+		return self.memory.data_size(self.context.as_context()) as i64;
 	}
 
 	/// Returns the size of a page, in bytes, for this memory.
 	#[func]
 	fn page_size(&self) -> i64 {
-		return self.memory.page_size(&self.context.dyn_bind().as_context()) as i64;
+		return self.memory.page_size(self.context.as_context()) as i64;
 	}
 
 	/// Returns minimum number of WebAssembly pages this memory must have.
 	#[func]
 	fn minimum(&self) -> i64 {
-		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
+		let ty = self.memory.ty(self.context.as_context());
 		return ty.minimum() as i64;
 	}
 
@@ -103,21 +103,21 @@ impl WasmMemory {
 	/// If there is no limit, returns i64::MAX
 	#[func]
 	fn maximum(&self) -> i64 {
-		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
+		let ty = self.memory.ty(self.context.as_context());
 		return ty.maximum().map_or(i64::MAX, |v| v as i64);
 	}
 
 	/// Returns whether this is a 64-bit memory or not.
 	#[func]
 	fn is_64(&self) -> bool {
-		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
+		let ty = self.memory.ty(self.context.as_context());
 		return ty.is_64();
 	}
 
 	/// Returns whether this is a shared memory or not.
 	#[func]
 	fn is_shared(&self) -> bool {
-		let ty = self.memory.ty(&self.context.dyn_bind().as_context());
+		let ty = self.memory.ty(self.context.as_context());
 		return ty.is_shared();
 	}
 
@@ -125,7 +125,7 @@ impl WasmMemory {
 	#[func]
 	fn grow(&mut self, delta: i64) -> MyGodotResult<bool> {
 		let delta = IntoMyGodotResult::or_godot_error(delta.try_into(), &format!("param delta is out of bounds of u64 (between 0 - {})", u64::MAX), false).without_err()?;
-		self.memory.grow(&mut self.context.dyn_bind_mut().as_context_mut(), delta)
+		self.memory.grow(self.context.as_context_mut(), delta)
 			.or_godot_error("Failed to grow memory", false)?;
 		return Ok(true);
 	}
@@ -135,7 +135,7 @@ impl WasmMemory {
 		if align <= 0 {
 			return Err(MyGodotError::from("Align must be greater than 0".into(), 0));
 		}
-		self.memory.write(&mut self.context.dyn_bind_mut().as_context_mut(), offset, bytes)
+		self.memory.write(self.context.as_context_mut(), offset, bytes)
 			.or_godot_error("Failed to write memory", 0)?;
 		return Ok((bytes.len() as i64).next_multiple_of(align));
 	}
@@ -216,7 +216,7 @@ impl WasmMemory {
 
 	fn _read(&mut self, offset: i64, bytes: &mut [u8]) -> MyGodotResult<()> {
 		let offset = IntoMyGodotResult::or_godot_error(offset.try_into(), &format!("param offset is out of bounds of usize (between 0 - {})", usize::MAX), ()).without_err()?;
-		self.memory.read(&mut self.context.dyn_bind_mut().as_context_mut(), offset, bytes)
+		self.memory.read(self.context.as_context_mut(), offset, bytes)
 			.or_godot_error("Failed to read memory", ())?;
 		return Ok(());
 	}
@@ -308,6 +308,9 @@ impl WasmMemory {
 	/// Note that, many separate [WasmMemory] objects can refer to the same memory!
     #[func]
     fn same_as(&mut self, other: Gd<WasmMemory>) -> bool {
-        return self.context.dyn_bind().as_context().same_store_as(&other.bind().context.dyn_bind().as_context()) && self.memory.debug_index_in_store() == other.bind().memory.debug_index_in_store();
+        let other = other.bind();
+		let context_self = self.context.as_context();
+		let context_other = other.context.as_context();
+        return context_self.same_store_as(&context_other) && self.memory.debug_index_in_store() == other.memory.debug_index_in_store();
     }
 }

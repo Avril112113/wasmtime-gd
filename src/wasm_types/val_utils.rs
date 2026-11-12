@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use wasmtime::{AsContextMut, Extern, ExternRef, HeapType, RefType, Val, ValType};
 
-use crate::{to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, wasm_types::gd_wasm_func::WasmFunc};
+use crate::{active_context::WasmContext, to_from_variant::to_from_godot::ToFromVariantContext, wasm_types::gd_wasm_func::WasmFunc};
 
 
 pub trait ValFromVariantByValType {
@@ -51,11 +51,11 @@ impl ValFromVariantByValType for RefType {
 }
 
 pub trait ValToVariant {
-	fn to_variant(&self, context: DynGd<RefCounted, dyn GdAsContext>) -> Variant;
+	fn to_variant(&self, context: &WasmContext) -> Variant;
 }
 
 impl ValToVariant for Val {
-	fn to_variant(&self, context: DynGd<RefCounted, dyn GdAsContext>) -> Variant {
+	fn to_variant(&self, context: &WasmContext) -> Variant {
 		match self {
 			Val::I32(value) => Variant::from(*value),
 			Val::I64(value) => Variant::from(*value),
@@ -63,7 +63,7 @@ impl ValToVariant for Val {
 			Val::F64(value) => Variant::from(f64::from_bits(*value)),
 			Val::V128(_v128) => todo!("V128"),
 			Val::FuncRef(func) => match func {
-				Some(func) => { WasmFunc::new_from(func.to_owned(), context).to_variant() },
+				Some(func) => { WasmFunc::new_from(func.to_owned(), context.clone()).to_variant() },
 				None => { Variant::nil() }
 			},
 			Val::ExternRef(_rooted) => todo!("ExternRef"),

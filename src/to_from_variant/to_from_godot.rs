@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::utils::GdAsContext;
+use crate::active_context::WasmContext;
 
 
 pub trait ToFromVariant {
@@ -9,6 +9,6 @@ pub trait ToFromVariant {
 }
 
 pub trait ToFromVariantContext {
-	fn to_variant(&self, context: DynGd<RefCounted, dyn GdAsContext>) -> Variant;
+	fn to_variant(&self, context: &WasmContext) -> Variant;
 	fn from_variant(variant: &Variant) -> Result<Self, ConvertError> where Self: Sized;
 }

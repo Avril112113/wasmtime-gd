@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::{gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, utils::GdAsContext, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory, gd_wasm_table::WasmTable, gd_wasm_tag::WasmTag}};
+use crate::{active_context::WasmContext, gd_wasm_module::WasmModule, gd_wasm_store::WasmStore, utils::GdAsContext, wasm_types::{gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory, gd_wasm_table::WasmTable, gd_wasm_tag::WasmTag}};
 
 /// An instantiated Wasmtime Module.
 /// 
@@ -41,8 +41,9 @@ impl WasmInstance {
     #[func]
     fn get_global(&mut self, name: GString) -> Option<Gd<WasmGlobal>> {
         let gd_store = self.store.clone();
+        let context = WasmContext::new(gd_store.into_dyn().upcast());
         return match self.instance.get_global(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(global) => Some(WasmGlobal::new_from(global, gd_store.into_dyn().upcast())),
+            Some(global) => Some(WasmGlobal::new_from(global, context)),
             None => None,
         };
     }
@@ -51,8 +52,9 @@ impl WasmInstance {
     #[func]
     fn get_func(&mut self, name: GString) -> Option<Gd<WasmFunc>> {
         let gd_store = self.store.clone();
+        let context = WasmContext::new(gd_store.into_dyn().upcast());
         return match self.instance.get_func(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(func) => Some(WasmFunc::new_from(func, gd_store.into_dyn().upcast())),
+            Some(func) => Some(WasmFunc::new_from(func, context)),
             None => None,
         };
     }
@@ -61,8 +63,9 @@ impl WasmInstance {
     #[func]
     fn get_memory(&mut self, name: GString) -> Option<Gd<WasmMemory>> {
         let gd_store = self.store.clone();
+        let context = WasmContext::new(gd_store.into_dyn().upcast());
         return match self.instance.get_memory(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(memory) => Some(WasmMemory::new_from(memory, gd_store.into_dyn().upcast())),
+            Some(memory) => Some(WasmMemory::new_from(memory, context)),
             None => None,
         };
     }
@@ -71,8 +74,9 @@ impl WasmInstance {
     #[func]
     fn get_table(&mut self, name: GString) -> Option<Gd<WasmTable>> {
         let gd_store = self.store.clone();
+        let context = WasmContext::new(gd_store.into_dyn().upcast());
         return match self.instance.get_table(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(table) => Some(WasmTable::new_from(table, gd_store.into_dyn().upcast())),
+            Some(table) => Some(WasmTable::new_from(table, context)),
             None => None,
         };
     }
@@ -81,8 +85,9 @@ impl WasmInstance {
     #[func]
     fn get_tag(&mut self, name: GString) -> Option<Gd<WasmTag>> {
         let gd_store = self.store.clone();
+        let context = WasmContext::new(gd_store.into_dyn().upcast());
         return match self.instance.get_tag(&mut self.store.bind_mut().as_context_mut(), &name.to_string()) {
-            Some(tag) => Some(WasmTag::new_from(tag, gd_store.into_dyn().upcast())),
+            Some(tag) => Some(WasmTag::new_from(tag, context)),
             None => None,
         };
     }

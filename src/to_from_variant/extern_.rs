@@ -1,16 +1,16 @@
 use godot::prelude::*;
 
-use crate::{to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, wasm_types::{WasmAsExtern, gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory}};
+use crate::{active_context::WasmContext, to_from_variant::to_from_godot::ToFromVariantContext, wasm_types::{WasmAsExtern, gd_wasm_func::WasmFunc, gd_wasm_global::WasmGlobal, gd_wasm_memory::WasmMemory}};
 
 
 
 impl ToFromVariantContext for wasmtime::Extern {
-	fn to_variant(&self, context: DynGd<RefCounted, dyn GdAsContext>) -> Variant {
+	fn to_variant(&self, context: &WasmContext) -> Variant {
 		match self {
-			wasmtime::Extern::Func(func) => WasmFunc::new_from(*func, context).to_variant(),
-			wasmtime::Extern::Global(global) => WasmGlobal::new_from(*global, context).to_variant(),
+			wasmtime::Extern::Func(func) => WasmFunc::new_from(*func, context.clone()).to_variant(),
+			wasmtime::Extern::Global(global) => WasmGlobal::new_from(*global, context.clone()).to_variant(),
 			wasmtime::Extern::Table(_table) => todo!(),
-			wasmtime::Extern::Memory(memory) => WasmMemory::new_from(*memory, context).to_variant(),
+			wasmtime::Extern::Memory(memory) => WasmMemory::new_from(*memory, context.clone()).to_variant(),
 			wasmtime::Extern::SharedMemory(_shared_memory) => todo!(),
 			wasmtime::Extern::Tag(_tag) => todo!(),
 		}

@@ -4,7 +4,7 @@ use godot::prelude::*;
 use wasmtime::AsContextMut;
 
 use crate::{
-	gd_wasm_engine::WasmEngine, gd_wasm_error::WasmError, store_data::StoreData, store_same_as::ContextStoreSameAs, utils::GdAsContext, utils_errors::{IntoMyGodotOption,IntoMyGodotResult, MyGodotResult}, wasm_types::gd_wasm_exn_ref::WasmExnRef
+	active_context::WasmContext, gd_wasm_engine::WasmEngine, gd_wasm_error::WasmError, store_data::StoreData, store_same_as::ContextStoreSameAs, utils::GdAsContext, utils_errors::{IntoMyGodotOption,IntoMyGodotResult, MyGodotResult}, wasm_types::gd_wasm_exn_ref::WasmExnRef
 };
 
 /// A Wasmtime Linker, to link wasm modules/instances together and provide imports from the host.
@@ -96,7 +96,7 @@ impl WasmStore {
 	#[func(gd_self)]
 	fn take_pending_exception(gd_self: Gd<Self>) -> Option<Gd<WasmExnRef>> {
 		if let Some(exn_ref) = gd_self.clone().bind_mut().as_context_mut().take_pending_exception() {
-			return Some(WasmExnRef::new_from(exn_ref, gd_self.into_dyn().upcast()));
+			return Some(WasmExnRef::new_from(exn_ref, WasmContext::new(gd_self.into_dyn().upcast())));
 		}
 		return None;
 	}

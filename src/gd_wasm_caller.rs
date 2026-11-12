@@ -4,7 +4,7 @@ use godot::{classes::class_macros::sys::is_editor, prelude::*};
 use wasmtime::{AsContextMut, Caller};
 
 use crate::{
-    gd_script_stuff::GDScriptStuff, gd_wasm_error::WasmError, store_data::StoreData, to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}, wasm_types::{gd_wasm_exn_ref::WasmExnRef, gd_wasm_memory::WasmMemory}
+    active_context::WasmContext, gd_script_stuff::GDScriptStuff, gd_wasm_error::WasmError, store_data::StoreData, to_from_variant::to_from_godot::ToFromVariantContext, utils::GdAsContext, utils_errors::{IntoMyGodotOption, IntoMyGodotResult, MyGodotResult}, wasm_types::{gd_wasm_exn_ref::WasmExnRef, gd_wasm_memory::WasmMemory}
 };
 
 
@@ -50,8 +50,9 @@ impl WasmCaller {
     #[func(gd_self)]
     fn get_export(gd_self: Gd<Self>, name: GString) -> Variant {
         // TODO: Don't unwrap.
+        let context = WasmContext::new(gd_self.clone().into_dyn().upcast());
         match gd_self.clone().bind_mut().caller.clone().unwrap().borrow_mut().get_export(&name.to_string()) {
-            Some(exter) => exter.to_variant(gd_self.into_dyn().upcast()),
+            Some(exter) => exter.to_variant(&context),
             None => Variant::nil(),
         }
     }
@@ -60,10 +61,11 @@ impl WasmCaller {
     #[func(gd_self)]
     fn get_memory(gd_self: Gd<Self>, #[opt(default="memory")] name: GString) -> Option<Gd<WasmMemory>> {
         // TODO: Don't unwrap.
+        let context = WasmContext::new(gd_self.clone().into_dyn().upcast());
         match gd_self.clone().bind_mut().caller.clone().unwrap().borrow_mut().get_export(&name.to_string()) {
             Some(exter) => {
                 match exter {
-                    wasmtime::Extern::Memory(memory) => Some(WasmMemory::new_from(memory, gd_self.into_dyn().upcast())),
+                    wasmtime::Extern::Memory(memory) => Some(WasmMemory::new_from(memory, context)),
                     _ => None,
                 }
             },
@@ -99,7 +101,7 @@ impl WasmCaller {
 	#[func(gd_self)]
 	fn take_pending_exception(gd_self: Gd<Self>) -> Option<Gd<WasmExnRef>> {
 		if let Some(exn_ref) = gd_self.clone().bind_mut().as_context_mut().take_pending_exception() {
-			return Some(WasmExnRef::new_from(exn_ref, gd_self.into_dyn().upcast()));
+			return Some(WasmExnRef::new_from(exn_ref, WasmContext::new(gd_self.into_dyn().upcast())));
 		}
 		return None;
 	}
