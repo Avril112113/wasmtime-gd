@@ -92,6 +92,8 @@ var _instance: WasmInstance
 var _exports: LuaWasmExports
 
 var _function_table_indicies: Dictionary[Callable, LuaCFunction] = {}
+var _function_table_spare_indicies: Array[int] = []
+var _lua_error_cfunc: WasmFunc
 
 var _raw_states: Dictionary[int, WeakRef] = {}
 var _states: Dictionary[int, WeakRef] = {}
@@ -125,6 +127,12 @@ func _init(vfs: Wasip1Vfs) -> void:
 	_exports = LuaWasmExports.new(_instance)
 	
 	if _instance.get_func("_initialize").call_wasm([]) is WasmError: return
+	
+	_lua_error_cfunc = WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], func(_caller: WasmCaller, state_ptr: int) -> Variant:
+		var state := self._get_state_raw(state_ptr)
+		state.lua_pushstring("Invalid")
+		return state.lua_error()
+	)
 	
 	is_setup = true
 
@@ -187,12 +195,27 @@ func _get_or_add_indirect_function(callable_key: Callable, callable_called := Ca
 	if callable_key in _function_table_indicies:
 		return _function_table_indicies[callable_key]
 	
-	var idx := _exports.__indirect_function_table.size()
-	_exports.__indirect_function_table.grow(1, WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], callable_called))
-	var cfunc := LuaCFunction.new(self, idx)
+	var idx: int
+	if len(self._function_table_spare_indicies) <= 0:
+		idx = _exports.__indirect_function_table.size()
+		_exports.__indirect_function_table.grow(1, WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], callable_called))
+	else:
+		idx = self._function_table_spare_indicies.pop_back()
+		_exports.__indirect_function_table.set(1, WasmFunc.from_callable(_store, [WasmTypes.I32], [WasmTypes.I32], callable_called))
+	var cfunc := LuaCFunction.new(self, idx, callable_called)
 	_function_table_indicies[callable_key] = cfunc
 	return cfunc
 
+func _free_indirect_function(f: LuaCFunction) -> void:
+	if self._function_table_indicies.erase(self._function_table_indicies.find_key(f)):
+		self._function_table_spare_indicies.push_back(f._fn_table_idx)
+		self._exports.__indirect_function_table.set(f._fn_table_idx, self._lua_error_cfunc)
+	else:
+		push_warning("Failed to erase ", f, " ", f._fn_table_idx, " from _function_table_indicies")
+
+## WARN: These are not reference counted in the underlying WASM module. [br]
+## Make sure to either re-use these or call [method LuaCFunction.free_from_box]. [br]
+## No need to clean-up if the [LuaBox] is freed / never used again.
 func lua_cfunction(callable: Callable) -> LuaCFunction:
 	return self._get_or_add_indirect_function(
 		callable,
