@@ -48,7 +48,7 @@ func _wasm_write_memory_prestat(offset: int, memory: WasmMemory) -> int:
 	else:
 		return 0
 	if memory.write_u8(offset + 0, preopen_type) == 0: return 0
-	if memory.write_u32(offset + 4, len(self.path.to_utf8_buffer())): return 0
+	if memory.write_u32(offset + 4, len(self.path.to_utf8_buffer())) == 0: return 0
 	return 8
 
 func _wasm_write_memory_prestat_dir_name(path_ptr: int, path_len: int, memory: WasmMemory) -> int:

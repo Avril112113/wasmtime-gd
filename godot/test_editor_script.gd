@@ -38,8 +38,8 @@ func _run() -> void:
 	# LuaBoxes release: 0.018s
 	#var entry_lua := "start = os.clock(); for i=1,1200 do print(\"Hi!\") end; finish = os.clock(); print(finish-start)".to_utf8_buffer()
 	
-	#var entry_lua := "print('my_gd_fn', my_gd_fn); print('my_gd_fn()', my_gd_fn())".to_utf8_buffer()
-	var entry_lua := "os.exit(418)".to_utf8_buffer()
+	var entry_lua := "print('my_gd_fn', my_gd_fn); print('my_gd_fn()', my_gd_fn())".to_utf8_buffer()
+	#var entry_lua := "os.exit(418)".to_utf8_buffer()
 	
 	vfs.vroot.add_child("test.lua", Wasip1VfsVirtualFile.new(vfs).with_write(entry_lua))
 	
@@ -66,6 +66,7 @@ func _run() -> void:
 			var state := box._get_state_raw(lua_state_ptr)
 			
 			#var t := Thread.new()
+			#print("Starting thread!")
 			#t.start(func(): return state.lua_pushinteger(112233))
 			#var result: Variant = t.wait_to_finish()
 			#print("Thread result: ", result)
@@ -83,9 +84,10 @@ func _run() -> void:
 	
 	print("~~~~~ main_cli()")
 	
-	box.wasi_environment.arguments = ["lua"]
+	box.wasi_environment.arguments = ["lua", "test.lua"]
 	var start := Time.get_unix_time_from_system()
 	print(box.main_cli())
+	print(main_state._string_lua_stack())
 	var finish := Time.get_unix_time_from_system()
 	print("Took %ss and %s fuel" % [finish - start, starting_fuel - box._store.fuel])
 	

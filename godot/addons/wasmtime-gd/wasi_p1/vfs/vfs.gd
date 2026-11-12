@@ -242,7 +242,7 @@ var _wasm_fd_prestat_dir_name = [
 		if memory == null:
 			return Wasip1Consts.Errno.ENOSYS
 		
-		if descriptor._wasm_write_memory_prestat_dir_name(path, path_len, memory) < 0:
+		if descriptor._wasm_write_memory_prestat_dir_name(path, path_len, memory) == 0:
 			return Wasip1Consts.Errno.EINVAL
 		return Wasip1Consts.Errno.ESUCCESS
 ]
