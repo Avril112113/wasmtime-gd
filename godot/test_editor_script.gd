@@ -58,7 +58,6 @@ func _run() -> void:
 	var starting_fuel := box._store.fuel
 	
 	print("~~~~~ my_gd_fn")
-	print((func(...arg): return).get_argument_count())
 	
 	var main_state := box.get_main_state()._state
 	
@@ -80,7 +79,7 @@ func _run() -> void:
 			#return state.lua_error()
 	)
 	my_gd_fn._push_closure(main_state)
-	my_gd_fn.free_from_box()
+	#my_gd_fn.free_from_box()
 	
 	main_state.lua_setglobal("my_gd_fn")
 	

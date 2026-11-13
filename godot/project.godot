@@ -22,6 +22,15 @@ config/icon="res://icon.svg"
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
+[file_customization]
+
+folder_colors={
+"res://addons/gut/": "red",
+"res://addons/lua-boxes-gd/": "blue",
+"res://addons/wasmtime-gd/": "teal",
+"res://tests/": "gray"
+}
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

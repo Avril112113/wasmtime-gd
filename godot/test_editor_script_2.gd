@@ -32,7 +32,7 @@ func _run() -> void:
 		#print("Haii! :D ", args)
 		#return [123, "simpley cool!"]
 	#)
-	# TODO: This should push a cfunction
+	
 	main_state.lua_globals.lua_set("fn2", main_state.box.lua_cfunction(func(state: LuaState, ...args: Array):
 		print("Nice state ", state, " ", args)
 		return [123, "what a state!"]
