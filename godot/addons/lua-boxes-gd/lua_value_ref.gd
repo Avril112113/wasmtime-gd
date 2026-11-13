@@ -28,7 +28,7 @@ func _notification(what: int) -> void:
 		if self._idx <= 0:
 			self._state.luaL_unref(LuaBox.RegistryIndex, self._ref_key)
 
-## Only used for Globals and MainState
+## Only used for Globals table and MainState
 func _pin_set(ref_key: int) -> void:
 	self._ref_key = ref_key
 	self._idx = -1
@@ -75,9 +75,9 @@ func _push(state: LuaStateRaw) -> int:
 		state.lua_rawgeti(LuaBox.RegistryIndex, self._ref_key)
 		# state: ..., value
 		if self._state.lua_type(_idx) != self._type:
+			push_error("LuaValueRef BUG: state reference index %s changed type! (expected %s but got %s)" % [self._idx, LuaBox.LuaType.find_key(self._type), self._state.lua_type(_idx)])
 			state.lua_pop(1)
 			# state: ...
-			assert(false, "LuaValueRef BUG: state reference index %s changed type! (expected %s but got %s)" % [self._idx, LuaBox.LuaType.find_key(self._type), self._state.lua_type(_idx)])
 			return 0
 		
 		return 1
@@ -157,9 +157,9 @@ func lua_pcall(err_handler: LuaFunction = null, ...args: Array[Variant]) -> Vari
 ## Returns [WasmError] on error, otherwise [Variant] on sucsess.
 func lua_get(key: Variant) -> Variant:
 	# _state: ...
-	assert(self._push(self._state) == 1, "lua_get failed to push self")
+	if self._push(self._state) != 1: return WasmError.new_from("lua_get failed to push self")
 	# _state: ..., self
-	assert(self._state._push_variant(key) == 1, "lua_get failed to push key")
+	if self._state._push_variant(key) != 1: return WasmError.new_from("lua_get failed to push key")
 	# _state: ..., self, key
 	var result := self._state.lua_gettable(-2)
 	if result is WasmError:
@@ -169,31 +169,33 @@ func lua_get(key: Variant) -> Variant:
 	if value is LuaValueRef:
 		value._pin()
 	
-	assert(not self._state.lua_pop(2) is WasmError)
+	var pop_result := self._state.lua_pop(2)
+	if pop_result is WasmError: return pop_result
 	# _state: ...
 	return value
 
 ## Returns [WasmError] on error, otherwise [code]null[/code] on sucsess.
 func lua_set(key: Variant, value: Variant) -> WasmError:
 	# _state: ...
-	assert(self._push(self._state) == 1, "lua_set failed to push self")
+	if self._push(self._state) != 1: return WasmError.new_from("lua_set failed to push self")
 	# _state: ..., self
-	assert(self._state._push_variant(key) == 1, "lua_set failed to push key")
+	if self._state._push_variant(key) != 1: return WasmError.new_from("lua_set failed to push key")
 	# _state: ..., self, key
-	assert(self._state._push_variant(value) == 1, "lua_set failed to push value")
+	if self._state._push_variant(value) != 1: return WasmError.new_from("lua_set failed to push value")
 	# _state: ..., self, key, value
 	var result := self._state.lua_settable(-3)
 	if result is WasmError:
 		return result
 	# _state: ..., self
-	assert(not self._state.lua_pop(1) is WasmError)
+	var pop_result := self._state.lua_pop(2)
+	if pop_result is WasmError: return pop_result
 	# _state: ...
 	return null
 
 ## Returns [WasmError] on error, otherwise [Variant] on sucsess.
 func lua_len() -> Variant:
 	# _state: ...
-	assert(self._push(self._state) == 1, "lua_len failed to push self")
+	if self._push(self._state) != 1: return WasmError.new_from("lua_set failed to push self")
 	# _state: ..., self
 	var result := self._state.lua_len(-1)
 	if result is WasmError:

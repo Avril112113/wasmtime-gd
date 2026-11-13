@@ -147,6 +147,8 @@ func main_cli() -> int:
 		return -99999
 	return result[0]
 
+#region State
+
 func get_main_state() -> LuaState:
 	return self._get_state_from(self._exports.get_global_state()[0])
 
@@ -185,8 +187,10 @@ func _get_state(state_raw: LuaStateRaw) -> LuaState:
 func _get_state_from(state_ptr: int) -> LuaState:
 	if state_ptr == null:
 		return null
-		
-	return self._get_state(self._get_state_raw(state_ptr))
+
+#endregion State
+
+#region Function
 
 func _get_or_add_indirect_function(callable_key: Callable, callable_called := Callable()) -> LuaCFunction:
 	if callable_called == Callable():
@@ -232,7 +236,9 @@ func lua_cfunction(callable: Callable) -> LuaCFunction:
 			var result := callable.callv(args)
 			if typeof(result) == TYPE_OBJECT and result is WasmError:
 				return result
-			assert(typeof(result) == TYPE_ARRAY, "lua_cfunction expected callable to return array of values or WasmError.")
+			if not typeof(result) == TYPE_ARRAY:
+				push_error("lua_cfunction expected callable to return array of values or WasmError.")
+				return 0
 			
 			var pushed := 0
 			for value in result:
@@ -242,6 +248,10 @@ func lua_cfunction(callable: Callable) -> LuaCFunction:
 				pushed += n
 			return pushed
 	)
+
+#endregion Function
+
+#region Memory Utils
 
 func _malloc_string(s: String) -> int:
 	var bytes := s.to_utf8_buffer()
@@ -266,3 +276,5 @@ func _read_null_terminated_string(ptr: int, limit := 1024*1024*1024) -> String:
 			return bytes.get_string_from_utf8()
 		bytes.append(byte)
 	return ""
+
+#endregion Memory Utils

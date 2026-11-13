@@ -1,6 +1,7 @@
 extends RefCounted
 class_name LuaStateRaw
 
+
 var box: LuaBox
 var _state_ptr: int
 
@@ -56,8 +57,8 @@ func _to_variant(idx: int) -> Variant:
 		LuaBox.LuaType.FUNCTION:
 			return LuaFunction.new(self, idx)
 		LuaBox.LuaType.THREAD:
-			return self.box._get_state(self.lua_tothread(idx))
-	assert(false, "Unsupported type '%s' _to_variant(%s)" % [self.lua_typename(ltype), idx])
+			return self.box._get_state(self.lua_tothread(idx), false)
+	push_error("Unsupported type '%s' _to_variant(%s)" % [self.lua_typename(ltype), idx])
 	return null
 
 ## Returns the amount of values pushed. [br]
@@ -65,19 +66,24 @@ func _to_variant(idx: int) -> Variant:
 func _push_variant(value: Variant) -> int:
 	match typeof(value):
 		TYPE_NIL:
-			assert(not self.lua_pushnil() is WasmError)
+			var result := self.lua_pushnil()
+			if result is WasmError: result.print(); return 0
 			return 1
 		TYPE_BOOL:
-			assert(not self.lua_pushboolean(1 if value else 0) is WasmError)
+			var result := self.lua_pushboolean(1 if value else 0)
+			if result is WasmError: result.print(); return 0
 			return 1
 		TYPE_INT:
-			assert(not self.lua_pushinteger(value) is WasmError)
+			var result := self.lua_pushinteger(value)
+			if result is WasmError: result.print(); return 0
 			return 1
 		TYPE_FLOAT:
-			assert(not self.lua_pushnumber(value) is WasmError)
+			var result := self.lua_pushnumber(value)
+			if result is WasmError: result.print(); return 0
 			return 1
 		TYPE_STRING:
-			assert(not self.lua_pushstring(value) is WasmError)
+			var result := self.lua_pushstring(value)
+			if result is WasmError: result.print(); return 0
 			return 1
 		TYPE_VECTOR2:
 			assert(false, "Unsupported Variant _push_variant(%s)" % [type_string(typeof(value))])
@@ -117,7 +123,8 @@ func _push_variant(value: Variant) -> int:
 			if value is LuaValueRef:
 				return value._push(self)
 			elif value is LuaCFunction:
-				assert(not value._push_closure(self, 0) is WasmError)
+				var result: Variant = value._push_closure(self, 0)
+				if result is WasmError: result.print(); return 0
 				return 1
 			assert(false, "Unsupported Variant _push_variant(%s)" % [value])
 		TYPE_CALLABLE:
@@ -149,7 +156,7 @@ func _push_variant(value: Variant) -> int:
 		TYPE_PACKED_VECTOR4_ARRAY:
 			assert(false, "Unsupported Variant _push_variant(%s)" % [type_string(typeof(value))])
 	
-	assert(false, "Unsupported Variant _push_variant(%s)" % [type_string(typeof(value))])
+	push_error("Unsupported Variant _push_variant(%s)" % [type_string(typeof(value))])
 	return 0
 
 ## [-0, +0, –] [br]
