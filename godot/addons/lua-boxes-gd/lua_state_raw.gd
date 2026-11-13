@@ -328,13 +328,13 @@ func lua_tointegerx(idx: int, pisnum: int) -> int:
 ## [code]void *lua_touserdata (lua_State *L, int index);[/code] [br]
 ##  [br]
 ##  If the value at the given index is a full userdata, returns its memory-block address. If the value is a light userdata, returns its value (a pointer). Otherwise, returns [code]NULL[/code]. [br]
-func lua_touserdata(idx: int) -> WasmError:
+func lua_touserdata(idx: int) -> int:
 	var result: Variant = self.box._exports.lua_touserdata(self._state_ptr, idx)
 	if result is WasmError:
 		if not result.is_throw_exception():
 			result.print()
 		return result
-	return null
+	return result[0]
 
 func luaL_checkversion_(ver: float, sz: int) -> Variant:
 	var result: Variant = self.box._exports.luaL_checkversion_(self._state_ptr, ver, sz)
@@ -1458,13 +1458,13 @@ func lua_setwarnf(f: int, ud: int) -> WasmError:
 ##  [br]
 ##  This function creates and pushes on the stack a new full userdata, with [code]nuvalue[/code] associated Lua values, called [code]user values[/code], plus an associated block of raw memory with [code]size[/code] bytes. (The user values can be set and read with the functions [method lua_setiuservalue] and [method lua_getiuservalue].)    [br]
 ##  The function returns the address of the block of memory. Lua ensures that this address is valid as long as the corresponding userdata is alive (see [code]§2.5[/code]). Moreover, if the userdata is marked for finalization (see [code]§2.5.3[/code]), its address is valid at least until the call to its finalizer. [br]
-func lua_newuserdatauv(size: int, nuvalue: int) -> WasmError:
+func lua_newuserdatauv(size: int, nuvalue: int) -> LuaUserdata:
 	var result: Variant = self.box._exports.lua_newuserdatauv(self._state_ptr, size, nuvalue)
 	if result is WasmError:
 		if not result.is_throw_exception():
 			result.print()
 		return result
-	return null
+	return LuaUserdata.new(self, -1, result)
 
 ## [br][br]
 ## [-0, +(0|1), –] [br]
