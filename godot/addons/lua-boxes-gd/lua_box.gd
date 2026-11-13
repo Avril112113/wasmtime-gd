@@ -150,12 +150,12 @@ func main_cli() -> int:
 #region State
 
 func get_main_state() -> LuaState:
-	return self._get_state_from(self._exports.get_global_state()[0])
+	return self._get_state_from(self._exports.get_global_state()[0], false)
 
 func new_state() -> LuaState:
 	var state_ptr := self._exports.luaL_newstate()
 	if state_ptr is Array and len(state_ptr) == 1 and state_ptr[0] is int:
-		return self._get_state_from(state_ptr[0])
+		return self._get_state_from(state_ptr[0], true)
 	elif state_ptr is WasmError:
 		return state_ptr
 	printerr("luaL_newstate() returned unexpect value %s" % [state_ptr])
@@ -174,21 +174,21 @@ func _get_state_raw(state_ptr: int) -> LuaStateRaw:
 	self._raw_states[state_ptr] = weakref(state_raw)
 	return state_raw
 
-func _get_state(state_raw: LuaStateRaw) -> LuaState:
+func _get_state(state_raw: LuaStateRaw, owned: bool) -> LuaState:
 	if state_raw._state_ptr in self._states:
 		var weak := self._states[state_raw._state_ptr].get_ref()
 		if weak != null:
 			return weak
 	
-	var state := LuaState.new(state_raw)
+	var state := LuaState.new(state_raw, owned)
 	self._states[state_raw._state_ptr] = weakref(state)
 	return state
 
-func _get_state_from(state_ptr: int) -> LuaState:
+func _get_state_from(state_ptr: int, owned: bool) -> LuaState:
 	if state_ptr == null:
 		return null
 	
-	return self._get_state(self._get_state_raw(state_ptr))
+	return self._get_state(self._get_state_raw(state_ptr), owned)
 
 #endregion State
 
@@ -226,7 +226,7 @@ func lua_cfunction(callable: Callable) -> LuaCFunction:
 	return self._get_or_add_indirect_function(
 		callable,
 		func(_caller: WasmCaller, state_ptr: int) -> Variant:
-			var state := self._get_state_from(state_ptr)
+			var state := self._get_state_from(state_ptr, false)
 			
 			var args := [state]
 			for i in range(state._state.lua_gettop()):
