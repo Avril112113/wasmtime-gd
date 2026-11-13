@@ -187,6 +187,8 @@ func _get_state(state_raw: LuaStateRaw) -> LuaState:
 func _get_state_from(state_ptr: int) -> LuaState:
 	if state_ptr == null:
 		return null
+	
+	return self._get_state(self._get_state_raw(state_ptr))
 
 #endregion State
 
